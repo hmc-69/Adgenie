@@ -35,7 +35,6 @@ const formatHashtags = (value) => {
 
 export const CreativeWorkspace = ({
   type,
-  campaign,
   isGenerating,
   generatedContent,
   errorMessage,
@@ -59,6 +58,7 @@ export const CreativeWorkspace = ({
   useEffect(() => {
     if (!generatedContent) return;
     if (type === 'image') {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setLocalImage({
         headline: generatedContent.headline || '',
         primary_text: generatedContent.primary_text || '',
@@ -86,55 +86,47 @@ export const CreativeWorkspace = ({
     }
   }, [generatedContent, type]);
 
-  useEffect(() => {
-    if (!generatedContent) return;
-    if (type === 'image') {
-      onContentChange({
-        ...generatedContent,
-        headline: localImage.headline,
-        primary_text: localImage.primary_text,
-        description: localImage.description,
-        call_to_action: localImage.call_to_action,
-        hashtags: formatHashtags(localImage.hashtags),
-        visual_direction: localImage.visual_direction,
-      });
-    }
-    if (type === 'video') {
-      onContentChange({
-        ...generatedContent,
-        title: localVideo.title,
-        duration: localVideo.duration,
-        scenes: localVideo.scenes,
-        final_cta: localVideo.final_cta,
-      });
-    }
-  }, [localImage, localVideo, onContentChange, generatedContent, type]);
-
   const handleImageChange = (field, value) => {
-    setLocalImage((current) => ({ ...current, [field]: value }));
+    const nextImage = { ...localImage, [field]: value };
+    setLocalImage(nextImage);
+    onContentChange({
+      ...generatedContent,
+      ...nextImage,
+      hashtags: formatHashtags(nextImage.hashtags),
+    });
   };
 
   const handleSceneChange = (sceneIndex, field, value) => {
-    setLocalVideo((current) => ({
-      ...current,
-      scenes: current.scenes.map((scene, index) => (index === sceneIndex ? { ...scene, [field]: value } : scene)),
-    }));
+    const nextVideo = {
+      ...localVideo,
+      scenes: localVideo.scenes.map((scene, index) => (index === sceneIndex ? { ...scene, [field]: value } : scene)),
+    };
+    setLocalVideo(nextVideo);
+    onContentChange({ ...generatedContent, ...nextVideo });
   };
 
   const handleVideoAddScene = () => {
-    setLocalVideo((current) => ({
-      ...current,
+    const nextVideo = {
+      ...localVideo,
       scenes: [
-        ...current.scenes,
+        ...localVideo.scenes,
         {
-          scene_number: current.scenes.length + 1,
+          scene_number: localVideo.scenes.length + 1,
           duration: '0-5 seconds',
           visual: '',
           voiceover: '',
           on_screen_text: '',
         },
       ],
-    }));
+    };
+    setLocalVideo(nextVideo);
+    onContentChange({ ...generatedContent, ...nextVideo });
+  };
+
+  const handleVideoFieldChange = (field, value) => {
+    const nextVideo = { ...localVideo, [field]: value };
+    setLocalVideo(nextVideo);
+    onContentChange({ ...generatedContent, ...nextVideo });
   };
 
   if (type === 'image') {
@@ -217,11 +209,11 @@ export const CreativeWorkspace = ({
       <div className="creative-form-grid">
         <div className="form-group">
           <label className="form-label">Title</label>
-          <input className="form-input form-input-plain" value={localVideo.title} onChange={(event) => setLocalVideo((current) => ({ ...current, title: event.target.value }))} />
+          <input className="form-input form-input-plain" value={localVideo.title} onChange={(event) => handleVideoFieldChange('title', event.target.value)} />
         </div>
         <div className="form-group">
           <label className="form-label">Duration</label>
-          <input className="form-input form-input-plain" value={localVideo.duration} onChange={(event) => setLocalVideo((current) => ({ ...current, duration: event.target.value }))} />
+          <input className="form-input form-input-plain" value={localVideo.duration} onChange={(event) => handleVideoFieldChange('duration', event.target.value)} />
         </div>
       </div>
 
@@ -253,7 +245,7 @@ export const CreativeWorkspace = ({
 
       <div className="form-group form-span-2">
         <label className="form-label">Final CTA</label>
-        <input className="form-input form-input-plain" value={localVideo.final_cta} onChange={(event) => setLocalVideo((current) => ({ ...current, final_cta: event.target.value }))} />
+        <input className="form-input form-input-plain" value={localVideo.final_cta} onChange={(event) => handleVideoFieldChange('final_cta', event.target.value)} />
       </div>
     </div>
   );

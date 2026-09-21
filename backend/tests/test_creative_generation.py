@@ -1,9 +1,17 @@
 import unittest
+from unittest.mock import patch
 
 from app.services.creative.text_generator import generate_image_brief, generate_video_script
 
 
 class CreativeGenerationTests(unittest.TestCase):
+    def setUp(self):
+        self.provider_patch = patch("app.core.config.settings.AI_PROVIDER", "mock")
+        self.provider_patch.start()
+
+    def tearDown(self):
+        self.provider_patch.stop()
+
     def test_generate_image_brief_contains_required_fields(self):
         campaign = {
             "name": "Summer Audio Launch",

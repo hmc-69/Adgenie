@@ -1,17 +1,20 @@
 from __future__ import annotations
 
-import os
 from typing import Any, Dict
 
+from app.core.config import settings
+from app.services.creative.providers.gemini_provider import GeminiCreativeProvider
 from app.services.creative.providers.mock_provider import MockCreativeProvider
 from app.services.creative.providers.provider import BaseCreativeProvider
 
 
 def get_provider() -> BaseCreativeProvider:
-    provider_name = os.getenv("AI_PROVIDER", "mock").lower()
+    provider_name = settings.AI_PROVIDER
     if provider_name == "mock":
         return MockCreativeProvider()
-    return MockCreativeProvider()
+    if provider_name == "gemini":
+        return GeminiCreativeProvider()
+    raise ValueError(f"Unsupported AI_PROVIDER: {provider_name}")
 
 
 def generate_image_brief(campaign: Dict[str, Any]) -> Dict[str, Any]:

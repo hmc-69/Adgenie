@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from typing import Any, Dict, List
 
 from fastapi import HTTPException, status
@@ -10,6 +11,8 @@ from app.models.campaign import Campaign
 from app.models.creative import Creative
 from app.schemas.creative import CreativeGenerateRequest, CreativeSaveRequest, CreativeType
 from app.services.creative.text_generator import generate_image_brief, generate_video_script
+
+logger = logging.getLogger(__name__)
 
 
 CREATIVE_NOT_FOUND_DETAIL = "Creative not found"
@@ -69,9 +72,10 @@ def generate_image_creative(db: Session, campaign_id: int, user_id: int) -> Dict
     try:
         return build_image_brief_payload(campaign)
     except Exception as exc:  # pragma: no cover - provider integration layer
+        logger.exception("Image creative generation failed for campaign %s", campaign_id)
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
-            detail=f"AI creative generation failed: {str(exc) or 'Unknown error'}",
+            detail="AI generation is temporarily unavailable. Please try again.",
         ) from exc
 
 
@@ -80,9 +84,10 @@ def generate_video_creative(db: Session, campaign_id: int, user_id: int) -> Dict
     try:
         return build_video_script_payload(campaign)
     except Exception as exc:  # pragma: no cover - provider integration layer
+        logger.exception("Video creative generation failed for campaign %s", campaign_id)
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
-            detail=f"AI creative generation failed: {str(exc) or 'Unknown error'}",
+            detail="AI generation is temporarily unavailable. Please try again.",
         ) from exc
 
 

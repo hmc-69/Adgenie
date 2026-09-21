@@ -14,6 +14,9 @@ class Settings:
     JWT_SECRET_KEY: str = os.getenv("JWT_SECRET_KEY", "adgenie_jwt_super_secret_key_2026_marketing_intel_secure_key")
     JWT_ALGORITHM: str = os.getenv("JWT_ALGORITHM", "HS256")
     JWT_ACCESS_TOKEN_EXPIRE_MINUTES: int = int(os.getenv("JWT_ACCESS_TOKEN_EXPIRE_MINUTES", "60"))
+    AI_PROVIDER: str = os.getenv("AI_PROVIDER", "mock").lower()
+    GEMINI_API_KEY: str | None = os.getenv("GEMINI_API_KEY")
+    GEMINI_MODEL: str = os.getenv("GEMINI_MODEL", "gemini-flash-lite-latest")
 
 
 settings = Settings()
