@@ -1,0 +1,86 @@
+import { apiClient } from './client';
+
+export const getApiErrorMessage = (error, fallback = 'Something went wrong. Please try again.') => {
+  const detail = error?.response?.data?.detail;
+
+  if (typeof detail === 'string' && detail.trim()) {
+    return detail;
+  }
+
+  if (Array.isArray(detail) && detail.length > 0) {
+    return detail
+      .map((item) => item.msg || item.message || JSON.stringify(item))
+      .join(' ');
+  }
+
+  if (error?.response?.status === 401) {
+    return 'Your session has expired. Please sign in again.';
+  }
+
+  if (error?.response?.status === 404) {
+    return 'Campaign not found.';
+  }
+
+  if (!error?.response) {
+    return 'Unable to reach the AdGenie API. Check your network connection.';
+  }
+
+  return fallback;
+};
+
+const toCampaignPayload = (formValues, { includeStatus = false } = {}) => {
+  const payload = {
+    name: formValues.name.trim(),
+    product_name: formValues.product_name.trim(),
+    description: formValues.description.trim(),
+    target_audience: formValues.target_audience.trim(),
+    platform: formValues.platform,
+    objective: formValues.objective,
+    tone: formValues.tone,
+    keywords: formValues.keywords?.trim() ? formValues.keywords.trim() : null,
+  };
+
+  if (formValues.budget === '' || formValues.budget === null || formValues.budget === undefined) {
+    payload.budget = null;
+  } else {
+    payload.budget = Number(formValues.budget);
+  }
+
+  if (includeStatus && formValues.status) {
+    payload.status = formValues.status;
+  }
+
+  return payload;
+};
+
+export const campaignService = {
+  createCampaign: async (formValues) => {
+    const response = await apiClient.post('/api/campaigns', toCampaignPayload(formValues));
+    return response.data;
+  },
+
+  getCampaigns: async () => {
+    const response = await apiClient.get('/api/campaigns');
+    return response.data;
+  },
+
+  getCampaign: async (campaignId) => {
+    const response = await apiClient.get(`/api/campaigns/${campaignId}`);
+    return response.data;
+  },
+
+  updateCampaign: async (campaignId, formValues) => {
+    const response = await apiClient.put(
+      `/api/campaigns/${campaignId}`,
+      toCampaignPayload(formValues, { includeStatus: true })
+    );
+    return response.data;
+  },
+
+  deleteCampaign: async (campaignId) => {
+    const response = await apiClient.delete(`/api/campaigns/${campaignId}`);
+    return response.data;
+  },
+};
+
+export default campaignService;
