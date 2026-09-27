@@ -84,7 +84,7 @@ export const CampaignEdit = () => {
         <div>
           <p className="page-kicker">Campaign Management</p>
           <h1>Edit Campaign</h1>
-          <p className="page-subtitle">Update campaign details. Ownership is verified on the server.</p>
+          <p className="page-subtitle">Refine the audience, objective, and direction for this campaign.</p>
         </div>
       </div>
 

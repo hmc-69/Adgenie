@@ -82,25 +82,12 @@ export const CampaignDetails = () => {
     }
   }, []);
 
-  const loadCampaign = async () => {
-    setLoading(true);
-    setErrorMessage('');
-    try {
-      const data = await campaignService.getCampaign(id);
-      setCampaign(data);
-    } catch (error) {
-      setErrorMessage(getApiErrorMessage(error, 'Unable to load this campaign.'));
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const loadSavedCreatives = async () => {
     if (!id) return;
     try {
       const data = await creativeService.listCreatives(id);
       setSavedCreatives(data.creatives || []);
-    } catch (error) {
+    } catch {
       setSavedCreatives([]);
     }
   };
@@ -134,9 +121,20 @@ export const CampaignDetails = () => {
   }, [id]);
 
   useEffect(() => {
-    if (campaign?.id) {
-      loadSavedCreatives();
-    }
+    if (!campaign?.id) return undefined;
+    let active = true;
+
+    const fetchCreatives = async () => {
+      try {
+        const data = await creativeService.listCreatives(campaign.id);
+        if (active) setSavedCreatives(data.creatives || []);
+      } catch {
+        if (active) setSavedCreatives([]);
+      }
+    };
+
+    fetchCreatives();
+    return () => { active = false; };
   }, [campaign?.id]);
 
   useEffect(() => {
@@ -333,24 +331,19 @@ export const CampaignDetails = () => {
   }
 
   return (
-    <div className="campaign-page">
-      <div className="page-header">
+    <div className="campaign-page campaign-workspace-page">
+      <Link to="/dashboard#campaigns" className="campaign-back-link"><span aria-hidden="true">←</span> Back to Campaigns</Link>
+      <header className="campaign-titlebar">
         <div>
-          <p className="page-kicker">Campaign Details</p>
+          <p className="page-kicker">Campaign workspace</p>
           <h1>{campaign.name}</h1>
           <p className="page-subtitle">{campaign.product_name}</p>
         </div>
         <div className="page-header-actions">
-          <Link to={`/campaigns/${campaign.id}/edit`} className="btn-primary-sm">Edit</Link>
-          <button type="button" className="btn-primary-sm" onClick={() => setCreativeModalOpen(true)}>
-            ✨ Create AI Creative
-          </button>
-          <button type="button" className="btn-danger-sm" onClick={() => setDeleteTarget(true)}>
-            Delete
-          </button>
-          <Link to="/dashboard" className="btn-secondary">Back to Campaigns</Link>
+          <Link to={`/campaigns/${campaign.id}/edit`} className="btn-secondary">Edit campaign</Link>
+          <button type="button" className="btn-danger-sm" onClick={() => setDeleteTarget(true)}>Delete</button>
         </div>
-      </div>
+      </header>
 
       {successMessage && (
         <div className="alert alert-success" role="status">
@@ -364,70 +357,48 @@ export const CampaignDetails = () => {
         </div>
       )}
 
-      <section className="campaign-details-card">
-        <div className="details-status-row">
-          <CampaignStatusBadge status={campaign.status} />
-          <span className="details-platform">{campaign.platform}</span>
-        </div>
+      <div className="campaign-meta-strip">
+        <div><span>Platform</span><strong>{campaign.platform}</strong></div>
+        <div><span>Objective</span><strong>{campaign.objective}</strong></div>
+        <div><span>Status</span><CampaignStatusBadge status={campaign.status} /></div>
+        <div><span>Tone</span><strong>{campaign.tone}</strong></div>
+        <div><span>Budget</span><strong>{formatBudget(campaign.budget)}</strong></div>
+      </div>
 
-        <div className="details-grid">
-          <div className="details-item">
-            <span className="meta-label">Campaign Name</span>
-            <span className="meta-value">{campaign.name}</span>
-          </div>
-          <div className="details-item">
-            <span className="meta-label">Product / Service</span>
-            <span className="meta-value">{campaign.product_name}</span>
-          </div>
-          <div className="details-item details-span-2">
+      <section className="campaign-overview-section">
+        <div className="workspace-section-heading">
+          <div><p className="page-kicker">Campaign context</p><h2>Campaign Overview</h2></div>
+          <span className="overview-date">Updated {formatDate(campaign.updated_at)}</span>
+        </div>
+        <div className="campaign-overview-grid">
+          <article className="overview-detail overview-detail-wide">
             <span className="meta-label">Description</span>
-            <p className="details-copy">{campaign.description}</p>
-          </div>
-          <div className="details-item details-span-2">
+            <p>{campaign.description}</p>
+          </article>
+          <article className="overview-detail">
             <span className="meta-label">Target Audience</span>
-            <p className="details-copy">{campaign.target_audience}</p>
-          </div>
-          <div className="details-item">
-            <span className="meta-label">Platform</span>
-            <span className="meta-value">{campaign.platform}</span>
-          </div>
-          <div className="details-item">
-            <span className="meta-label">Objective</span>
-            <span className="meta-value">{campaign.objective}</span>
-          </div>
-          <div className="details-item">
-            <span className="meta-label">Tone</span>
-            <span className="meta-value">{campaign.tone}</span>
-          </div>
-          <div className="details-item">
-            <span className="meta-label">Budget</span>
-            <span className="meta-value">{formatBudget(campaign.budget)}</span>
-          </div>
-          <div className="details-item details-span-2">
-            <span className="meta-label">Keywords</span>
-            <p className="details-copy">{campaign.keywords || 'None'}</p>
-          </div>
-          <div className="details-item">
-            <span className="meta-label">Status</span>
-            <span className="meta-value">{campaign.status}</span>
-          </div>
-          <div className="details-item">
-            <span className="meta-label">Created Date</span>
-            <span className="meta-value">{formatDate(campaign.created_at)}</span>
-          </div>
-          <div className="details-item">
-            <span className="meta-label">Updated Date</span>
-            <span className="meta-value">{formatDate(campaign.updated_at)}</span>
-          </div>
+            <p>{campaign.target_audience}</p>
+          </article>
+          {campaign.keywords && (
+            <article className="overview-detail">
+              <span className="meta-label">Keywords</span>
+              <p>{campaign.keywords}</p>
+            </article>
+          )}
         </div>
       </section>
 
-      <section className="campaign-details-card creative-panel">
-        <div className="section-header">
-          <h2>AI Creative Studio</h2>
-          <button type="button" className="btn-secondary" onClick={() => setCreativeModalOpen(true)}>
-            Switch Type
-          </button>
+      <section className="creative-studio-section" id="creative-studio">
+        <div className="studio-heading-row">
+          <div>
+            <p className="page-kicker">Campaign assets</p>
+            <h2>AI Creative Studio</h2>
+            <p>Create AI-powered advertising content for this campaign.</p>
+          </div>
+          <div className="creative-type-control" role="tablist" aria-label="Creative type">
+            <button type="button" role="tab" aria-selected={creativeType === 'image'} className={creativeType === 'image' ? 'selected' : ''} onClick={() => creativeType !== 'image' && handleSelectCreativeType('image')}>Image Ad</button>
+            <button type="button" role="tab" aria-selected={creativeType === 'video'} className={creativeType === 'video' ? 'selected' : ''} onClick={() => creativeType !== 'video' && handleSelectCreativeType('video')}>Video Ad</button>
+          </div>
         </div>
 
         {creativeType && (
@@ -454,40 +425,17 @@ export const CampaignDetails = () => {
         )}
       </section>
 
-      <section className="campaign-intelligence">
-        <div className="section-header">
-          <h2>Saved Creatives</h2>
-          <span className="section-tag">Campaign Assets</span>
+      <section className="saved-creatives-section">
+        <div className="workspace-section-heading">
+          <div><p className="page-kicker">Campaign library</p><h2>Saved Creatives</h2></div>
+          <span className="saved-count">{savedCreatives.length} {savedCreatives.length === 1 ? 'asset' : 'assets'}</span>
         </div>
         <CreativeList
           creatives={savedCreatives}
+          campaignId={campaign.id}
+          campaignName={campaign.name}
           onOpenCreative={handleOpenCreative}
         />
-      </section>
-
-      <section className="campaign-intelligence" aria-label="Future campaign intelligence">
-        <div className="section-header">
-          <h2>Campaign Intelligence</h2>
-          <span className="section-tag">Reserved for later modules</span>
-        </div>
-        <div className="intelligence-grid">
-          <article className="intelligence-slot">
-            <h3>Advertisements</h3>
-            <p>AI-generated ads for this campaign will appear here in Module 4.</p>
-          </article>
-          <article className="intelligence-slot">
-            <h3>Audience Analysis</h3>
-            <p>Audience insights attached to this campaign will appear in a later module.</p>
-          </article>
-          <article className="intelligence-slot">
-            <h3>Sentiment Analysis</h3>
-            <p>Sentiment results will attach to this campaign without changing this layout.</p>
-          </article>
-          <article className="intelligence-slot">
-            <h3>Performance Prediction</h3>
-            <p>Forecasts and analytics will be added here once the campaign foundation is in use.</p>
-          </article>
-        </div>
       </section>
 
       <CreativeModal

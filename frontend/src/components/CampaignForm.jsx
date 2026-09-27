@@ -45,7 +45,7 @@ export const CampaignForm = ({
             onChange={handleChange}
             maxLength={150}
             required
-            placeholder="Summer Sale"
+            placeholder="Autumn essentials"
           />
         </div>
 
@@ -60,7 +60,7 @@ export const CampaignForm = ({
             onChange={handleChange}
             maxLength={150}
             required
-            placeholder="Wireless headphones"
+            placeholder="Product or service name"
           />
         </div>
 
@@ -74,7 +74,7 @@ export const CampaignForm = ({
             onChange={handleChange}
             rows={4}
             required
-            placeholder="Describe the campaign message, offer, and creative direction."
+            placeholder="What are you promoting, and what should the campaign communicate?"
           />
         </div>
 
@@ -88,7 +88,7 @@ export const CampaignForm = ({
             onChange={handleChange}
             rows={3}
             required
-            placeholder="Who should this campaign reach?"
+            placeholder="Describe the people, interests, or needs this campaign is for."
           />
         </div>
 
@@ -185,7 +185,7 @@ export const CampaignForm = ({
             value={values.keywords}
             onChange={handleChange}
             rows={2}
-            placeholder="summer, wireless, headphones"
+            placeholder="Add terms that should guide the campaign, separated by commas."
           />
         </div>
       </div>

@@ -1,42 +1,21 @@
 import { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context';
-import { healthAPI } from '../api/client';
 import { campaignService, getApiErrorMessage } from '../api/campaignService';
+import { creativeService } from '../api/creativeService';
 import { CampaignTable } from '../components/CampaignTable';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 
 export const Dashboard = () => {
   const { user } = useAuth();
   const location = useLocation();
-  const [dbStatus, setDbStatus] = useState({ status: 'checking', message: 'Checking MySQL connection...' });
-  const [apiStatus, setApiStatus] = useState({ status: 'checking', message: 'Checking API status...' });
   const [campaigns, setCampaigns] = useState([]);
   const [campaignsLoading, setCampaignsLoading] = useState(true);
   const [campaignsError, setCampaignsError] = useState('');
+  const [creativeCount, setCreativeCount] = useState(null);
   const [successMessage, setSuccessMessage] = useState(location.state?.successMessage || '');
   const [campaignToDelete, setCampaignToDelete] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
-
-  useEffect(() => {
-    const checkSystemHealth = async () => {
-      try {
-        const apiRes = await healthAPI.checkBackend();
-        setApiStatus({ status: 'online', message: apiRes.service || 'AdGenie Backend Online' });
-      } catch {
-        setApiStatus({ status: 'offline', message: 'Backend Disconnected' });
-      }
-
-      try {
-        const dbRes = await healthAPI.checkDatabase();
-        setDbStatus({ status: dbRes.status, message: `${dbRes.database} ${dbRes.message}` });
-      } catch {
-        setDbStatus({ status: 'error', message: 'Database unreachable' });
-      }
-    };
-
-    checkSystemHealth();
-  }, []);
 
   const loadCampaigns = async () => {
     setCampaignsLoading(true);
@@ -52,8 +31,47 @@ export const Dashboard = () => {
   };
 
   useEffect(() => {
-    loadCampaigns();
+    let active = true;
+
+    const fetchCampaigns = async () => {
+      try {
+        const data = await campaignService.getCampaigns();
+        if (active) setCampaigns(data.campaigns || []);
+      } catch (error) {
+        if (active) setCampaignsError(getApiErrorMessage(error, 'Unable to load campaigns.'));
+      } finally {
+        if (active) setCampaignsLoading(false);
+      }
+    };
+
+    fetchCampaigns();
+    return () => { active = false; };
   }, []);
+
+  useEffect(() => {
+    let isActive = true;
+
+    Promise.all(
+      campaigns.map(async (campaign) => {
+        try {
+          const result = await creativeService.listCreatives(campaign.id);
+          return result.total ?? result.creatives?.length ?? 0;
+        } catch {
+          return null;
+        }
+      }),
+    ).then((counts) => {
+      if (isActive) {
+        setCreativeCount(counts.some((count) => count === null)
+          ? null
+          : counts.reduce((total, count) => total + count, 0));
+      }
+    });
+
+    return () => {
+      isActive = false;
+    };
+  }, [campaigns]);
 
   const handleConfirmDelete = async () => {
     if (!campaignToDelete) {
@@ -73,65 +91,22 @@ export const Dashboard = () => {
     }
   };
 
-  const formatDate = (dateString) => {
-    if (!dateString) return 'N/A';
-    try {
-      const date = new Date(dateString);
-      return date.toLocaleDateString(undefined, {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-      });
-    } catch {
-      return dateString;
-    }
-  };
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
+  const activeCampaigns = campaigns.filter((campaign) => campaign.status?.toLowerCase() === 'active').length;
 
   return (
     <div className="dashboard-container">
-      {/* Welcome Banner */}
       <section className="welcome-banner">
         <div className="welcome-content">
-          <div className="welcome-badge">
-            <span className="pulse-dot"></span>
-            <span>Module 3 Active • Campaign Management</span>
-          </div>
           <h1 className="welcome-title">
-            Welcome, <span className="highlight-text">{user?.name || 'Marketer'}</span>
+            {greeting}, <span className="highlight-text">{user?.name?.split(' ')[0] || 'there'}</span>
           </h1>
           <p className="welcome-desc">
-            You are securely logged into your AdGenie AI-Powered Marketing Intelligence workspace.
+            Create and manage intelligent advertising campaigns with AI-powered creative generation and marketing insights.
           </p>
         </div>
-
-        <div className="system-health-card">
-          <h3 className="health-card-title">System & Security Status</h3>
-          <div className="health-metrics">
-            <div className="health-item">
-              <span className={`status-indicator ${apiStatus.status === 'online' ? 'online' : 'offline'}`}></span>
-              <div>
-                <div className="health-label">FastAPI Backend</div>
-                <div className="health-value">{apiStatus.message}</div>
-              </div>
-            </div>
-            <div className="health-item">
-              <span className={`status-indicator ${dbStatus.status === 'connected' ? 'online' : 'offline'}`}></span>
-              <div>
-                <div className="health-label">MySQL Database</div>
-                <div className="health-value">{dbStatus.message}</div>
-              </div>
-            </div>
-            <div className="health-item">
-              <span className="status-indicator online"></span>
-              <div>
-                <div className="health-label">Auth Security</div>
-                <div className="health-value">Argon2 Password Hash + JWT Session</div>
-              </div>
-            </div>
-          </div>
-        </div>
+        <Link to="/campaigns/new" className="btn-primary dashboard-create-action"><span aria-hidden="true">+</span> Create Campaign</Link>
       </section>
 
       {successMessage && (
@@ -140,10 +115,28 @@ export const Dashboard = () => {
         </div>
       )}
 
+      <section className="dashboard-summary" aria-label="Campaign summary">
+        <article className="summary-card">
+          <span>Total campaigns</span>
+          <strong>{campaignsLoading || campaignsError ? '—' : campaigns.length}</strong>
+          <small>Across your workspace</small>
+        </article>
+        <article className="summary-card">
+          <span>AI creatives</span>
+          <strong>{creativeCount === null ? '—' : creativeCount}</strong>
+          <small>Saved campaign assets</small>
+        </article>
+        <article className="summary-card summary-card-accent">
+          <span>Active campaigns</span>
+          <strong>{campaignsLoading || campaignsError ? '—' : activeCampaigns}</strong>
+          <small>Currently in market</small>
+        </article>
+      </section>
+
       <section className="dashboard-section" id="campaigns">
         <div className="section-header">
-          <h2>Campaigns</h2>
-          <Link to="/campaigns/new" className="btn-primary-sm">Create Campaign</Link>
+          <div><p className="page-kicker">Workspace</p><h2>Your Campaigns</h2></div>
+          <Link to="/campaigns/new" className="btn-secondary">+ Create Campaign</Link>
         </div>
 
         {campaignsLoading && (
@@ -162,116 +155,16 @@ export const Dashboard = () => {
         )}
 
         {!campaignsLoading && !campaignsError && campaigns.length === 0 && (
-          <div className="state-card">
+          <div className="state-card dashboard-empty-state">
             <h3>No campaigns yet</h3>
-            <p>Create your first campaign to start building the foundation for AI ads, audience analysis, and performance insights.</p>
-            <Link to="/campaigns/new" className="btn-primary-sm">Create Campaign</Link>
+            <p>Create your first campaign to get started.</p>
+            <Link to="/campaigns/new" className="btn-primary">Create Campaign</Link>
           </div>
         )}
 
         {!campaignsLoading && !campaignsError && campaigns.length > 0 && (
           <CampaignTable campaigns={campaigns} onDelete={setCampaignToDelete} />
         )}
-      </section>
-
-      {/* User Profile Card */}
-      <section className="dashboard-section">
-        <div className="section-header">
-          <h2>User Account Details</h2>
-          <span className="section-tag">Protected Endpoint (`/api/auth/me`)</span>
-        </div>
-
-        <div className="profile-grid">
-          <div className="profile-card">
-            <div className="profile-avatar-large">
-              {user?.name ? user.name.charAt(0).toUpperCase() : 'U'}
-            </div>
-            <div className="profile-primary-info">
-              <h3>{user?.name}</h3>
-              <p>{user?.email}</p>
-              <span className="role-pill">Verified Marketer</span>
-            </div>
-          </div>
-
-          <div className="profile-meta-card">
-            <div className="meta-row">
-              <span className="meta-label">User ID</span>
-              <span className="meta-value font-mono">#{user?.id}</span>
-            </div>
-            <div className="meta-row">
-              <span className="meta-label">Primary Email</span>
-              <span className="meta-value">{user?.email}</span>
-            </div>
-            <div className="meta-row">
-              <span className="meta-label">Member Since</span>
-              <span className="meta-value">{formatDate(user?.created_at)}</span>
-            </div>
-            <div className="meta-row">
-              <span className="meta-label">Last Updated</span>
-              <span className="meta-value">{formatDate(user?.updated_at)}</span>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Platform Features Grid */}
-      <section className="dashboard-section">
-        <div className="section-header">
-          <h2>Marketing Intelligence Modules</h2>
-          <span className="section-tag">AdGenie AI Platform</span>
-        </div>
-
-        <div className="modules-grid">
-          <div className="module-card">
-            <div className="module-icon icon-ai">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8z"></path>
-                <path d="M12 6v6l4 2"></path>
-              </svg>
-            </div>
-            <h3>Campaign Optimization</h3>
-            <p>Predictive budget allocation and performance forecasting driven by multi-channel AI modeling.</p>
-            <span className="module-status active">Ready for Integration</span>
-          </div>
-
-          <div className="module-card">
-            <div className="module-icon icon-audience">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                <circle cx="9" cy="7" r="4"></circle>
-                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-              </svg>
-            </div>
-            <h3>Audience Intelligence</h3>
-            <p>Cluster behavioral personas and hyper-target high-converting demographics across platforms.</p>
-            <span className="module-status active">Ready for Integration</span>
-          </div>
-
-          <div className="module-card">
-            <div className="module-icon icon-creative">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
-              </svg>
-            </div>
-            <h3>AI Creative Engine</h3>
-            <p>Automated copy generation, headline variants, and visual asset scoring for ad creatives.</p>
-            <span className="module-status active">Ready for Integration</span>
-          </div>
-
-          <div className="module-card">
-            <div className="module-icon icon-analytics">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <line x1="18" y1="20" x2="18" y2="10"></line>
-                <line x1="12" y1="20" x2="12" y2="4"></line>
-                <line x1="6" y1="20" x2="6" y2="14"></line>
-              </svg>
-            </div>
-            <h3>ROI & ROAS Forecasting</h3>
-            <p>Real-time conversion attribution modeling and marketing return-on-ad-spend intelligence.</p>
-            <span className="module-status active">Ready for Integration</span>
-          </div>
-        </div>
       </section>
 
       <ConfirmDialog

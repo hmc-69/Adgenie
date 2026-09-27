@@ -8,7 +8,9 @@ import { Dashboard } from './pages/Dashboard';
 import { CampaignNew } from './pages/CampaignNew';
 import { CampaignDetails } from './pages/CampaignDetails';
 import { CampaignEdit } from './pages/CampaignEdit';
+import { LandingPage } from './pages/LandingPage';
 import './App.css';
+import './brand.css';
 
 // Component to redirect authenticated users away from /login and /register
 const PublicOnlyRoute = ({ children }) => {
@@ -27,6 +29,16 @@ const PublicOnlyRoute = ({ children }) => {
   }
 
   return children;
+};
+
+const PublicHomeRoute = () => {
+  const { isAuthenticated, loading } = useAuth();
+
+  if (loading) {
+    return <div className="auth-loading-screen"><div className="auth-spinner" /></div>;
+  }
+
+  return isAuthenticated ? <Navigate to="/dashboard" replace /> : <LandingPage />;
 };
 
 function AppRoutes() {
@@ -83,8 +95,8 @@ function AppRoutes() {
               </ProtectedRoute>
             }
           />
-          <Route path="/" element={<Navigate to="/dashboard" replace />} />
-          <Route path="*" element={<Navigate to="/dashboard" replace />} />
+          <Route path="/" element={<PublicHomeRoute />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>
     </div>

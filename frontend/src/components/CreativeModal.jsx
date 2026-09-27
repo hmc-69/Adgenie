@@ -9,13 +9,13 @@ export const CreativeModal = ({ open, onClose, onSelectType }) => {
         type: 'image',
         emoji: '🖼️',
         title: 'Image Ad',
-        description: 'Generate an AI-powered creative brief for a future poster or image.',
+        description: 'Build an editable image-ad brief and generate an advertisement image.',
       },
       {
         type: 'video',
         emoji: '🎬',
         title: 'Video Ad',
-        description: 'Generate an AI-powered script for a future video advertisement.',
+        description: 'Create an editable, scene-by-scene video advertisement script.',
       },
     ],
     []

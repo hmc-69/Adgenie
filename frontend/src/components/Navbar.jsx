@@ -1,9 +1,14 @@
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context';
 
 export const Navbar = () => {
   const { user, isAuthenticated, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const campaignMatch = location.pathname.match(/^\/campaigns\/(\d+)$/);
+  const creativeStudioTarget = campaignMatch
+    ? `/campaigns/${campaignMatch[1]}#creative-studio`
+    : '/dashboard#campaigns';
 
   const handleLogout = async () => {
     await logout();
@@ -13,15 +18,11 @@ export const Navbar = () => {
   return (
     <header className="navbar-container">
       <div className="navbar-content">
-        <Link to="/" className="navbar-brand">
-          <div className="brand-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
-            </svg>
-          </div>
+        <Link to={isAuthenticated ? '/dashboard' : '/'} className="navbar-brand">
+          <div className="brand-icon" aria-hidden="true">A</div>
           <div className="brand-text">
             <span className="brand-title">AdGenie</span>
-            <span className="brand-tag">AI Marketing Intel</span>
+            <span className="brand-tag">AI Marketing Intelligence</span>
           </div>
         </Link>
 
@@ -29,8 +30,9 @@ export const Navbar = () => {
           {isAuthenticated && user ? (
             <div className="user-profile-menu">
               <nav className="navbar-links" aria-label="Primary">
-                <Link to="/dashboard" className="nav-link">Dashboard</Link>
-                <Link to="/campaigns/new" className="nav-link">New Campaign</Link>
+                <Link to="/dashboard" className={`nav-link ${location.pathname === '/dashboard' ? 'active' : ''}`}>Dashboard</Link>
+                <Link to="/dashboard#campaigns" className="nav-link">Campaigns</Link>
+                <Link to={creativeStudioTarget} className="nav-link">Creative Studio</Link>
               </nav>
               <div className="user-info-chip">
                 <div className="user-avatar">
@@ -55,6 +57,17 @@ export const Navbar = () => {
                 <span>Logout</span>
               </button>
             </div>
+          ) : location.pathname === '/' ? (
+            <>
+              <nav className="landing-nav-links" aria-label="Landing page">
+                <a href="#features">Features</a>
+                <a href="#about">About</a>
+              </nav>
+              <div className="auth-nav-links">
+                <Link to="/login" className="nav-link">Sign In</Link>
+                <Link to="/register" className="btn-primary-sm">Get Started</Link>
+              </div>
+            </>
           ) : (
             <div className="auth-nav-links">
               <Link to="/login" className="nav-link">Sign In</Link>

@@ -45,7 +45,7 @@ export const CampaignNew = () => {
         <div>
           <p className="page-kicker">Campaign Management</p>
           <h1>Create Campaign</h1>
-          <p className="page-subtitle">Define the campaign details that later modules will use for AI generation and analysis.</p>
+          <p className="page-subtitle">Set your audience, objective, and creative direction to shape a focused campaign.</p>
         </div>
       </div>
 

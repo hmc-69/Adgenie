@@ -139,136 +139,99 @@ export const CreativeWorkspace = ({
 
   if (type === 'image') {
     return (
-      <div className="creative-workspace">
+      <div className="creative-workspace image-creative-workspace">
         <div className="creative-workspace-header">
-          <div>
-            <p className="page-kicker">Image Creative</p>
-            <h2>Creative Brief</h2>
-          </div>
+          <div><p className="page-kicker">Image Ad</p><h3>Creative brief</h3></div>
           <div className="creative-actions">
             <button type="button" className="btn-primary" onClick={onGenerate} disabled={isGenerating}>
-              {isGenerating ? 'Generating...' : 'Generate'}
+              {isGenerating ? 'Generating brief...' : 'Generate Brief'}
             </button>
-            <button type="button" className="btn-secondary" onClick={onRegenerate} disabled={isGenerating || !hasGenerated}>
-              Regenerate
-            </button>
-            <button type="button" className="btn-primary-sm" onClick={onSave} disabled={isGenerating || !hasGenerated}>
-              Save Creative
-            </button>
+            <button type="button" className="btn-secondary" onClick={onRegenerate} disabled={isGenerating || !hasGenerated}>Regenerate Brief</button>
+            <button type="button" className="btn-secondary" onClick={onSave} disabled={isGenerating || !hasGenerated}>Save Creative</button>
           </div>
         </div>
-
         {errorMessage && <div className="alert alert-error" role="alert"><span>{errorMessage}</span></div>}
         {savedCreative && <div className="alert alert-success" role="status"><span>Saved as {savedCreative.type} creative.</span></div>}
 
-        <div className="creative-form-grid">
-          <div className="form-group form-span-2">
-            <label className="form-label">Headline</label>
-            <input className="form-input form-input-plain" value={localImage.headline} onChange={(event) => handleImageChange('headline', event.target.value)} />
-          </div>
-          <div className="form-group form-span-2">
-            <label className="form-label">Primary Text</label>
-            <textarea className="form-textarea" rows={3} value={localImage.primary_text} onChange={(event) => handleImageChange('primary_text', event.target.value)} />
-          </div>
-          <div className="form-group form-span-2">
-            <label className="form-label">Description</label>
-            <textarea className="form-textarea" rows={3} value={localImage.description} onChange={(event) => handleImageChange('description', event.target.value)} />
-          </div>
-          <div className="form-group">
-            <label className="form-label">Call To Action</label>
-            <input className="form-input form-input-plain" value={localImage.call_to_action} onChange={(event) => handleImageChange('call_to_action', event.target.value)} />
-          </div>
-          <div className="form-group">
-            <label className="form-label">Hashtags</label>
-            <input className="form-input form-input-plain" value={localImage.hashtags} onChange={(event) => handleImageChange('hashtags', event.target.value)} />
-          </div>
-          <div className="form-group form-span-2">
-            <label className="form-label">Visual Direction</label>
-            <textarea className="form-textarea" rows={4} value={localImage.visual_direction} onChange={(event) => handleImageChange('visual_direction', event.target.value)} />
-          </div>
+        <div className="creative-studio-layout">
+          <section className="creative-brief-panel" aria-label="Editable image creative brief">
+            <div className="creative-panel-heading"><div><p className="page-kicker">M4.1 output</p><h3>Creative Brief</h3></div><span>Editable</span></div>
+            <div className="creative-form-grid">
+              <div className="form-group form-span-2">
+                <label className="form-label" htmlFor="image-headline">Headline</label>
+                <input id="image-headline" className="form-input form-input-plain" value={localImage.headline} onChange={(event) => handleImageChange('headline', event.target.value)} />
+              </div>
+              <div className="form-group form-span-2">
+                <label className="form-label" htmlFor="image-primary-text">Primary Text</label>
+                <textarea id="image-primary-text" className="form-textarea" rows={3} value={localImage.primary_text} onChange={(event) => handleImageChange('primary_text', event.target.value)} />
+              </div>
+              <div className="form-group form-span-2">
+                <label className="form-label" htmlFor="image-description">Description</label>
+                <textarea id="image-description" className="form-textarea" rows={3} value={localImage.description} onChange={(event) => handleImageChange('description', event.target.value)} />
+              </div>
+              <div className="form-group">
+                <label className="form-label" htmlFor="image-cta">Call To Action</label>
+                <input id="image-cta" className="form-input form-input-plain" value={localImage.call_to_action} onChange={(event) => handleImageChange('call_to_action', event.target.value)} />
+              </div>
+              <div className="form-group">
+                <label className="form-label" htmlFor="image-hashtags">Hashtags</label>
+                <input id="image-hashtags" className="form-input form-input-plain" value={localImage.hashtags} onChange={(event) => handleImageChange('hashtags', event.target.value)} />
+              </div>
+              <div className="form-group form-span-2">
+                <label className="form-label" htmlFor="image-visual-direction">Visual Direction</label>
+                <textarea id="image-visual-direction" className="form-textarea" rows={4} value={localImage.visual_direction} onChange={(event) => handleImageChange('visual_direction', event.target.value)} />
+              </div>
+            </div>
+
+            <div className="image-settings-panel">
+              <div className="image-settings-header"><h3>Image settings</h3><span>Applied to the next render</span></div>
+              <div className="settings-grid">
+                <div className="settings-card">
+                  <label className="form-label">Aspect Ratio</label>
+                  <div className="option-pills">
+                    {(imageConfig?.aspect_ratios || ['1:1', '4:5', '9:16', '16:9', '3:4']).map((ratio) => (
+                      <button key={ratio} type="button" className={`option-pill ${imageSettings.aspectRatio === ratio ? 'selected' : ''}`} aria-pressed={imageSettings.aspectRatio === ratio} title={{ '1:1': 'Square social post', '4:5': 'Portrait social post', '9:16': 'Story or Reel', '16:9': 'Landscape or banner', '3:4': 'Portrait poster' }[ratio]} onClick={() => onImageSettingsChange('aspectRatio', ratio)}>
+                        <span className="ratio-preview" style={{ aspectRatio: ratio.replace(':', ' / ') }} />{ratio}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div className="settings-card">
+                  <label className="form-label">Visual Style</label>
+                  <div className="option-pills">
+                    {(imageConfig?.styles || ['AI Recommended', 'Photographic', 'Minimal', 'Editorial', 'Bold Graphic', 'Luxury', 'Playful']).map((style) => (
+                      <button key={style} type="button" className={`option-pill ${imageSettings.style === style ? 'selected' : ''}`} aria-pressed={imageSettings.style === style} onClick={() => onImageSettingsChange('style', style)}>{style}</button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+              <button type="button" className="btn-primary image-generate-button" onClick={onGenerateImage} disabled={isGenerating || isGeneratingImage}>
+                {isGeneratingImage ? 'Generating your advertisement...' : 'Generate Advertisement'}
+              </button>
+            </div>
+          </section>
+
+          <section className="creative-output-panel" aria-label="Generated advertisement preview">
+            <div className="creative-panel-heading"><div><p className="page-kicker">M4.2 output</p><h3>Generated Creative</h3></div></div>
+            {isGeneratingImage ? (
+              <div className="creative-output-empty creative-output-loading" aria-live="polite" aria-busy="true">
+                <div className="spinner" /><strong>Generating your advertisement...</strong><span>Preparing your image in {imageSettings.aspectRatio} format.</span>
+              </div>
+            ) : generatedImage?.previewUrl ? (
+              <>
+                <div className="generated-image-meta"><span>{generatedImage.aspect_ratio}</span><span>{generatedImage.style}</span></div>
+                <img src={generatedImage.previewUrl} alt="Generated advertisement" className="generated-image" />
+                <div className="landing-actions">
+                  <button type="button" className="btn-secondary" onClick={onGenerateImage} disabled={isGenerating || isGeneratingImage}>Regenerate</button>
+                  <button type="button" className="btn-primary-sm" onClick={onSaveImage} disabled={isGenerating || isGeneratingImage}>Save</button>
+                  <button type="button" className="btn-secondary" onClick={onDownloadImage} disabled={isGenerating || isGeneratingImage}>Download</button>
+                </div>
+              </>
+            ) : (
+              <div className="creative-output-empty"><span className="output-mark" aria-hidden="true">✳</span><strong>Your generated advertisement will appear here.</strong><span>Create or open an image brief, choose a style and format, then generate your image.</span></div>
+            )}
+          </section>
         </div>
-
-        <div className="image-settings-panel">
-          <div className="image-settings-header">
-            <h3>Image Format</h3>
-          </div>
-
-          <div className="settings-grid">
-            <div className="settings-card">
-              <label className="form-label">Aspect Ratio</label>
-              <div className="option-pills">
-                {(imageConfig?.aspect_ratios || ['1:1', '4:5', '9:16', '16:9', '3:4']).map((ratio) => (
-                  <button
-                    key={ratio}
-                    type="button"
-                    className={`option-pill ${imageSettings.aspectRatio === ratio ? 'selected' : ''}`}
-                    aria-pressed={imageSettings.aspectRatio === ratio}
-                    title={{ '1:1': 'Square social post', '4:5': 'Portrait social post', '9:16': 'Story or Reel', '16:9': 'Landscape or banner', '3:4': 'Portrait poster' }[ratio]}
-                    onClick={() => onImageSettingsChange('aspectRatio', ratio)}
-                  >
-                    <span className="ratio-preview" style={{ aspectRatio: ratio.replace(':', ' / ') }} />
-                    {ratio}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="settings-card">
-              <label className="form-label">Visual Style</label>
-              <div className="option-pills">
-                {(imageConfig?.styles || ['AI Recommended', 'Photographic', 'Minimal', 'Editorial', 'Bold Graphic', 'Luxury', 'Playful']).map((style) => (
-                  <button
-                    key={style}
-                    type="button"
-                    className={`option-pill ${imageSettings.style === style ? 'selected' : ''}`}
-                    aria-pressed={imageSettings.style === style}
-                    onClick={() => onImageSettingsChange('style', style)}
-                  >
-                    {style}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-          </div>
-
-          <div className="image-action-row">
-            <button type="button" className="btn-primary" onClick={onGenerateImage} disabled={isGenerating || isGeneratingImage}>
-              {isGeneratingImage ? 'Generating your advertisement...' : 'Generate Advertisement'}
-            </button>
-          </div>
-        </div>
-
-        {isGeneratingImage && (
-          <div className="loading-state" aria-live="polite" aria-busy="true">
-            <div className="spinner" />
-            <p>Generating your advertisement...</p>
-          </div>
-        )}
-
-        {generatedImage?.previewUrl && (
-          <div className="generated-image-panel">
-            <div className="generated-image-header">
-              <h3>Generated Advertisement</h3>
-              <div className="generated-image-meta">
-                <span>{generatedImage.aspect_ratio}</span>
-                <span>{generatedImage.style}</span>
-              </div>
-            </div>
-            <img src={generatedImage.previewUrl} alt="Generated advertisement" className="generated-image" />
-            <div className="landing-actions">
-              <button type="button" className="btn-secondary" onClick={onGenerateImage} disabled={isGenerating || isGeneratingImage}>
-                Regenerate
-              </button>
-              <button type="button" className="btn-primary-sm" onClick={onSaveImage} disabled={isGenerating || isGeneratingImage}>
-                Save
-              </button>
-              <button type="button" className="btn-secondary" onClick={onDownloadImage} disabled={isGenerating || isGeneratingImage}>
-                Download
-              </button>
-            </div>
-          </div>
-        )}
       </div>
     );
   }
