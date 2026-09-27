@@ -36,6 +36,7 @@ const formatHashtags = (value) => {
 export const CreativeWorkspace = ({
   type,
   isGenerating,
+  isGeneratingImage,
   generatedContent,
   errorMessage,
   onGenerate,
@@ -43,6 +44,13 @@ export const CreativeWorkspace = ({
   onSave,
   onContentChange,
   savedCreative,
+  imageConfig,
+  imageSettings,
+  onImageSettingsChange,
+  generatedImage,
+  onGenerateImage,
+  onSaveImage,
+  onDownloadImage,
 }) => {
   const [localImage, setLocalImage] = useState(emptyImage);
   const [localVideo, setLocalVideo] = useState(emptyVideo);
@@ -179,6 +187,88 @@ export const CreativeWorkspace = ({
             <textarea className="form-textarea" rows={4} value={localImage.visual_direction} onChange={(event) => handleImageChange('visual_direction', event.target.value)} />
           </div>
         </div>
+
+        <div className="image-settings-panel">
+          <div className="image-settings-header">
+            <h3>Image Format</h3>
+          </div>
+
+          <div className="settings-grid">
+            <div className="settings-card">
+              <label className="form-label">Aspect Ratio</label>
+              <div className="option-pills">
+                {(imageConfig?.aspect_ratios || ['1:1', '4:5', '9:16', '16:9', '3:4']).map((ratio) => (
+                  <button
+                    key={ratio}
+                    type="button"
+                    className={`option-pill ${imageSettings.aspectRatio === ratio ? 'selected' : ''}`}
+                    aria-pressed={imageSettings.aspectRatio === ratio}
+                    title={{ '1:1': 'Square social post', '4:5': 'Portrait social post', '9:16': 'Story or Reel', '16:9': 'Landscape or banner', '3:4': 'Portrait poster' }[ratio]}
+                    onClick={() => onImageSettingsChange('aspectRatio', ratio)}
+                  >
+                    <span className="ratio-preview" style={{ aspectRatio: ratio.replace(':', ' / ') }} />
+                    {ratio}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="settings-card">
+              <label className="form-label">Visual Style</label>
+              <div className="option-pills">
+                {(imageConfig?.styles || ['AI Recommended', 'Photographic', 'Minimal', 'Editorial', 'Bold Graphic', 'Luxury', 'Playful']).map((style) => (
+                  <button
+                    key={style}
+                    type="button"
+                    className={`option-pill ${imageSettings.style === style ? 'selected' : ''}`}
+                    aria-pressed={imageSettings.style === style}
+                    onClick={() => onImageSettingsChange('style', style)}
+                  >
+                    {style}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+          </div>
+
+          <div className="image-action-row">
+            <button type="button" className="btn-primary" onClick={onGenerateImage} disabled={isGenerating || isGeneratingImage}>
+              {isGeneratingImage ? 'Generating your advertisement...' : 'Generate Advertisement'}
+            </button>
+          </div>
+        </div>
+
+        {isGeneratingImage && (
+          <div className="loading-state" aria-live="polite" aria-busy="true">
+            <div className="spinner" />
+            <p>Generating your advertisement...</p>
+          </div>
+        )}
+
+        {generatedImage?.previewUrl && (
+          <div className="generated-image-panel">
+            <div className="generated-image-header">
+              <h3>Generated Advertisement</h3>
+              <div className="generated-image-meta">
+                <span>{generatedImage.aspect_ratio}</span>
+                <span>{generatedImage.style}</span>
+              </div>
+            </div>
+            <img src={generatedImage.previewUrl} alt="Generated advertisement" className="generated-image" />
+            <div className="landing-actions">
+              <button type="button" className="btn-secondary" onClick={onGenerateImage} disabled={isGenerating || isGeneratingImage}>
+                Regenerate
+              </button>
+              <button type="button" className="btn-primary-sm" onClick={onSaveImage} disabled={isGenerating || isGeneratingImage}>
+                Save
+              </button>
+              <button type="button" className="btn-secondary" onClick={onDownloadImage} disabled={isGenerating || isGeneratingImage}>
+                Download
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     );
   }

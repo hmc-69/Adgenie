@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams, useLocation } from 'react-router-dom';
 import { campaignService, getApiErrorMessage } from '../api/campaignService';
 import { creativeService } from '../api/creativeService';
@@ -49,8 +49,38 @@ export const CampaignDetails = () => {
   const [creativeContent, setCreativeContent] = useState(null);
   const [creativeError, setCreativeError] = useState('');
   const [isGeneratingCreative, setIsGeneratingCreative] = useState(false);
+  const [isGeneratingImage, setIsGeneratingImage] = useState(false);
   const [savedCreatives, setSavedCreatives] = useState([]);
   const [lastSavedCreative, setLastSavedCreative] = useState(null);
+  const [imageConfig, setImageConfig] = useState({ aspect_ratios: ['1:1', '4:5', '9:16', '16:9', '3:4'], styles: ['AI Recommended', 'Photographic', 'Minimal', 'Editorial', 'Bold Graphic', 'Luxury', 'Playful'] });
+  const [imageSettings, setImageSettings] = useState({ aspectRatio: '4:5', style: 'Photographic' });
+  const [generatedImage, setGeneratedImage] = useState(null);
+  const generatedImageUrlRef = useRef(null);
+  const selectedCreativeIdRef = useRef(null);
+  const imageRequestInFlightRef = useRef(false);
+
+  const setImagePreview = (image, blob) => {
+    if (generatedImageUrlRef.current) {
+      URL.revokeObjectURL(generatedImageUrlRef.current);
+    }
+    const previewUrl = URL.createObjectURL(blob);
+    generatedImageUrlRef.current = previewUrl;
+    setGeneratedImage({ ...image, previewUrl });
+  };
+
+  const clearImagePreview = () => {
+    if (generatedImageUrlRef.current) {
+      URL.revokeObjectURL(generatedImageUrlRef.current);
+      generatedImageUrlRef.current = null;
+    }
+    setGeneratedImage(null);
+  };
+
+  useEffect(() => () => {
+    if (generatedImageUrlRef.current) {
+      URL.revokeObjectURL(generatedImageUrlRef.current);
+    }
+  }, []);
 
   const loadCampaign = async () => {
     setLoading(true);
@@ -109,6 +139,22 @@ export const CampaignDetails = () => {
     }
   }, [campaign?.id]);
 
+  useEffect(() => {
+    const fetchImageConfig = async () => {
+      try {
+        const config = await creativeService.getImageGenerationConfig();
+        setImageConfig(config);
+        if (config?.aspect_ratios?.length) {
+          setImageSettings((previous) => ({ ...previous, aspectRatio: config.aspect_ratios.includes(previous.aspectRatio) ? previous.aspectRatio : config.aspect_ratios[0] }));
+        }
+      } catch {
+        setImageConfig({ aspect_ratios: ['1:1', '4:5', '9:16', '16:9', '3:4'], styles: ['AI Recommended', 'Photographic', 'Minimal', 'Editorial', 'Bold Graphic', 'Luxury', 'Playful'] });
+      }
+    };
+
+    fetchImageConfig();
+  }, []);
+
   const handleDelete = async () => {
     setIsDeleting(true);
     try {
@@ -127,6 +173,7 @@ export const CampaignDetails = () => {
 
   const handleGenerateCreative = async () => {
     if (!campaign?.id) return;
+    selectedCreativeIdRef.current = null;
     setCreativeError('');
     setIsGeneratingCreative(true);
 
@@ -162,6 +209,7 @@ export const CampaignDetails = () => {
         content: creativeContent,
       });
       setLastSavedCreative(saved);
+      selectedCreativeIdRef.current = saved.id;
       await loadSavedCreatives();
       setSuccessMessage(
         creativeType === 'image'
@@ -173,9 +221,89 @@ export const CampaignDetails = () => {
     }
   };
 
+  const handleGenerateAdvertisementImage = async () => {
+    if (imageRequestInFlightRef.current) return;
+    if (!campaign?.id || !savedCreatives.length || creativeType !== 'image'){
+      setCreativeError('Save an image creative before generating an ad image.');
+      return;
+    }
+
+    const sourceCreative = savedCreatives.find((creative) => creative.id === selectedCreativeIdRef.current)
+      || savedCreatives.find((creative) => creative.type === 'image' && creative.generated_content && Object.keys(creative.generated_content).length > 0);
+    if (!sourceCreative) {
+      setCreativeError('Generate and save an image creative before creating the advertisement.');
+      return;
+    }
+
+    setCreativeError('');
+    imageRequestInFlightRef.current = true;
+    setIsGeneratingImage(true);
+
+    try {
+      const response = await creativeService.generateAdvertisementImage({
+        campaign_id: Number(campaign.id),
+        creative_id: Number(sourceCreative.id),
+        aspect_ratio: imageSettings.aspectRatio,
+        style: imageSettings.style,
+      });
+      const imageBlob = await creativeService.getAdvertisementImage(campaign.id, sourceCreative.id);
+      setImagePreview(response, imageBlob);
+      selectedCreativeIdRef.current = sourceCreative.id;
+      await loadSavedCreatives();
+      setSuccessMessage('Advertisement image generated successfully.');
+    } catch (error) {
+      setCreativeError(getApiErrorMessage(error, 'Unable to generate the advertisement image. Please try again.'));
+    } finally {
+      imageRequestInFlightRef.current = false;
+      setIsGeneratingImage(false);
+    }
+  };
+
+  const handleImageSettingsChange = (field, value) => {
+    setImageSettings((previous) => ({ ...previous, [field]: value }));
+  };
+
+  const handleSaveGeneratedImage = async () => {
+    if (!generatedImage?.creative_id) return;
+    await loadSavedCreatives();
+    setSuccessMessage('Advertisement image is saved to this campaign.');
+  };
+
+  const handleDownloadGeneratedImage = () => {
+    if (!generatedImage?.previewUrl) return;
+    const link = document.createElement('a');
+    link.href = generatedImage.previewUrl;
+    link.download = `adgenie-campaign-${campaign.id}-image.jpg`;
+    link.click();
+  };
+
+  const handleOpenCreative = async (creative) => {
+    setCreativeType(creative.type);
+    setCreativeContent(creative.generated_content || {});
+    setCreativeError('');
+    selectedCreativeIdRef.current = creative.id;
+    clearImagePreview();
+
+    if (creative.type === 'image' && creative.image_url) {
+      try {
+        const imageBlob = await creativeService.getAdvertisementImage(campaign.id, creative.id);
+        setImagePreview({
+          creative_id: creative.id,
+          image_url: creative.image_url,
+          aspect_ratio: creative.image_aspect_ratio,
+          style: creative.image_style,
+        }, imageBlob);
+      } catch (error) {
+        setCreativeError(getApiErrorMessage(error, 'Unable to load the saved advertisement image.'));
+      }
+    }
+  };
+
   const handleSelectCreativeType = (type) => {
     setCreativeType(type);
     setCreativeContent(null);
+    selectedCreativeIdRef.current = null;
+    clearImagePreview();
     setCreativeError('');
     setLastSavedCreative(null);
     setCreativeModalOpen(false);
@@ -307,6 +435,7 @@ export const CampaignDetails = () => {
             type={creativeType}
             campaign={campaign}
             isGenerating={isGeneratingCreative}
+            isGeneratingImage={isGeneratingImage}
             generatedContent={creativeContent}
             errorMessage={creativeError}
             onGenerate={handleGenerateCreative}
@@ -314,6 +443,13 @@ export const CampaignDetails = () => {
             onSave={handleSaveCreative}
             onContentChange={setCreativeContent}
             savedCreative={lastSavedCreative}
+            imageConfig={imageConfig}
+            imageSettings={imageSettings}
+            onImageSettingsChange={handleImageSettingsChange}
+            generatedImage={generatedImage}
+            onGenerateImage={handleGenerateAdvertisementImage}
+            onSaveImage={handleSaveGeneratedImage}
+            onDownloadImage={handleDownloadGeneratedImage}
           />
         )}
       </section>
@@ -325,11 +461,7 @@ export const CampaignDetails = () => {
         </div>
         <CreativeList
           creatives={savedCreatives}
-          onOpenCreative={(creative) => {
-            setCreativeType(creative.type);
-            setCreativeContent(creative.generated_content || {});
-            setCreativeError('');
-          }}
+          onOpenCreative={handleOpenCreative}
         />
       </section>
 

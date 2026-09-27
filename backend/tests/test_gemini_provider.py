@@ -2,12 +2,14 @@ import unittest
 from unittest.mock import Mock, patch
 
 from fastapi import HTTPException
+from google.genai.errors import ServerError
 
 from app.routers.creative import router
 from app.schemas.creative import ImageCreativeBrief, VideoCreativeScript
 from app.services.creative.providers.gemini_provider import GeminiCreativeProvider
 from app.services.creative.providers.mock_provider import MockCreativeProvider
 from app.services.creative.text_generator import get_provider
+from app.services.creative.text_generator import generate_image_brief
 from app.services.creative_service import get_owned_campaign
 from app.core.config import settings
 
@@ -65,6 +67,29 @@ class GeminiProviderTests(unittest.TestCase):
         self.assertEqual(request["config"].response_mime_type, "application/json")
         self.assertIs(request["config"].response_schema, ImageCreativeBrief)
 
+    def test_image_brief_uses_mock_fallback_when_gemini_is_unavailable(self):
+        error = ServerError(503, {"error": {"status": "UNAVAILABLE"}}, None)
+        with patch.object(settings, "AI_PROVIDER", "gemini"), patch.object(
+            settings, "AI_FALLBACK_TO_MOCK", True
+        ), patch.object(settings, "GEMINI_API_KEY", "test-key"), patch(
+            "app.services.creative.providers.gemini_provider.genai.Client"
+        ) as client:
+            client.return_value.models.generate_content.side_effect = error
+            result = generate_image_brief(self.campaign)
+
+        self.assertIn("headline", result)
+        self.assertIn("visual_direction", result)
+
+    def test_image_brief_does_not_fallback_for_non_server_errors(self):
+        with patch.object(settings, "AI_PROVIDER", "gemini"), patch.object(
+            settings, "AI_FALLBACK_TO_MOCK", True
+        ), patch.object(settings, "GEMINI_API_KEY", "test-key"), patch(
+            "app.services.creative.providers.gemini_provider.genai.Client"
+        ) as client:
+            client.return_value.models.generate_content.side_effect = ValueError("bad response")
+            with self.assertRaisesRegex(ValueError, "bad response"):
+                generate_image_brief(self.campaign)
+
     def test_structured_video_response_is_validated(self):
         parsed = VideoCreativeScript(
             title="Wireless Earbuds for Every Day",
@@ -94,7 +119,12 @@ class GeminiProviderTests(unittest.TestCase):
         )
 
     def test_creative_routes_require_authentication_dependency(self):
-        protected_paths = {"/api/creative/image-brief", "/api/creative/video-script"}
+        protected_paths = {
+            "/api/creative/image-brief",
+            "/api/creative/video-script",
+            "/api/creative/image",
+            "/api/creative/campaign/{campaign_id}/image/{creative_id}",
+        }
         for route in router.routes:
             if route.path in protected_paths:
                 dependency_callables = {dependency.call for dependency in route.dependant.dependencies}

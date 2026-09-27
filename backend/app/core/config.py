@@ -15,8 +15,13 @@ class Settings:
     JWT_ALGORITHM: str = os.getenv("JWT_ALGORITHM", "HS256")
     JWT_ACCESS_TOKEN_EXPIRE_MINUTES: int = int(os.getenv("JWT_ACCESS_TOKEN_EXPIRE_MINUTES", "60"))
     AI_PROVIDER: str = os.getenv("AI_PROVIDER", "mock").lower()
+    AI_FALLBACK_TO_MOCK: bool = os.getenv("AI_FALLBACK_TO_MOCK", "true").lower() in {"1", "true", "yes", "on"}
+    IMAGE_PROVIDER: str = os.getenv("IMAGE_PROVIDER", "cloudflare").lower()
+    CLOUDFLARE_IMAGE_API_URL: str | None = os.getenv("CLOUDFLARE_IMAGE_API_URL")
+    CLOUDFLARE_API_KEY: str | None = os.getenv("CLOUDFLARE_API_KEY")
     GEMINI_API_KEY: str | None = os.getenv("GEMINI_API_KEY")
-    GEMINI_MODEL: str = os.getenv("GEMINI_MODEL", "gemini-flash-lite-latest")
+    GEMINI_MODEL: str = os.getenv("GEMINI_MODEL", "gemini-3.1-flash-lite")
+    GEMINI_IMAGE_MODEL: str = os.getenv("GEMINI_IMAGE_MODEL", "gemini-2.5-flash-image")
 
 
 settings = Settings()

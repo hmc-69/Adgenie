@@ -25,8 +25,10 @@ export const CreativeList = ({ creatives = [], onOpenCreative }) => {
             </div>
             <h3>{preview}</h3>
             <p>
-              {creative.type === 'image'
-                ? content.primary_text || content.description || 'Image brief ready for editing.'
+              {creative.type === 'image' && creative.image_url
+                ? `Advertisement image saved${creative.image_aspect_ratio ? ` · ${creative.image_aspect_ratio}` : ''}${creative.image_style ? ` · ${creative.image_style}` : ''}.`
+                : creative.type === 'image'
+                  ? content.primary_text || content.description || 'Image brief ready for editing.'
                 : (content.scenes && content.scenes.length ? `${content.scenes.length} scenes` : 'Video script ready for editing.')}
             </p>
             <button type="button" className="btn-secondary" onClick={() => onOpenCreative(creative)}>

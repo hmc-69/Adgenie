@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import logging
+from datetime import datetime, timezone
+from pathlib import Path
 from typing import Any, Dict, List
 
 from fastapi import HTTPException, status
@@ -10,7 +12,14 @@ from sqlalchemy.orm import Session
 from app.models.campaign import Campaign
 from app.models.creative import Creative
 from app.schemas.creative import CreativeGenerateRequest, CreativeSaveRequest, CreativeType
-from app.services.creative.text_generator import generate_image_brief, generate_video_script
+from app.services.creative.providers.cloudflare_image_provider import CloudflareImageProviderError
+from app.services.creative.text_generator import (
+    build_image_generation_prompt,
+    generate_image_brief,
+    generate_video_script,
+    get_image_provider,
+)
+from app.services.image_storage import generated_image_path, save_generated_image_bytes
 
 logger = logging.getLogger(__name__)
 
@@ -133,3 +142,127 @@ def get_creative_for_campaign(db: Session, creative_id: int, campaign_id: int, u
     if creative is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=CREATIVE_NOT_FOUND_DETAIL)
     return creative
+
+
+def generate_ad_image_for_creative(
+    db: Session,
+    campaign_id: int,
+    creative_id: int,
+    user_id: int,
+    aspect_ratio: str,
+    style: str,
+) -> Dict[str, Any]:
+    campaign = get_owned_campaign(db, campaign_id=campaign_id, user_id=user_id)
+    creative = get_creative_for_campaign(db, creative_id=creative_id, campaign_id=campaign_id, user_id=user_id)
+    if creative.type != CreativeType.IMAGE.value:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Selected creative must be an image creative")
+
+    creative_payload = creative.generated_content or {}
+    if not creative_payload:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Image creative content is missing")
+
+    campaign_payload = {
+        "name": campaign.name,
+        "product_name": campaign.product_name,
+        "description": campaign.description,
+        "target_audience": campaign.target_audience,
+        "platform": campaign.platform,
+        "objective": campaign.objective,
+        "tone": campaign.tone,
+        "keywords": campaign.keywords,
+    }
+    prompt = build_image_generation_prompt(
+        campaign_payload,
+        creative_payload,
+        aspect_ratio,
+        style,
+    )
+
+    try:
+        provider = get_image_provider()
+    except ValueError as exc:
+        logger.error("Image provider configuration error: %s", exc)
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Image generation service is not configured.",
+        ) from exc
+
+    try:
+        generated_image = provider.generate_image(prompt, aspect_ratio=aspect_ratio)
+    except (CloudflareImageProviderError, ValueError) as exc:
+        logger.exception("Cloudflare image generation failed for campaign %s", campaign_id)
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="Unable to generate the advertisement image. Please try again.",
+        ) from exc
+
+    previous_image_path = creative.image_path
+    try:
+        local_path = save_generated_image_bytes(
+            image_bytes=generated_image.content,
+            content_type=generated_image.content_type,
+            campaign_id=campaign.id,
+            original_creative_id=creative.id,
+        )
+    except OSError as exc:
+        logger.exception("Generated image storage failed for campaign %s", campaign_id)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Unable to store the generated image. Please try again.",
+        ) from exc
+
+    relative_url = f"/api/creative/campaign/{campaign.id}/image/{creative.id}"
+
+    creative.image_url = relative_url
+    creative.image_path = local_path
+    creative.image_aspect_ratio = aspect_ratio
+    creative.image_style = style
+    creative.image_resolution = None
+    creative.generated_at = datetime.now(timezone.utc)
+    creative.generated_content = {
+        **creative.generated_content,
+        "image_metadata": {
+            "aspect_ratio": aspect_ratio,
+            "style": style,
+            "image_url": relative_url,
+        },
+    }
+
+    try:
+        db.add(creative)
+        db.commit()
+        db.refresh(creative)
+    except SQLAlchemyError:
+        db.rollback()
+        Path(local_path).unlink(missing_ok=True)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to persist generated image")
+
+    if previous_image_path and previous_image_path != local_path:
+        Path(previous_image_path).unlink(missing_ok=True)
+
+    return {
+        "campaign_id": campaign.id,
+        "creative_id": creative.id,
+        "image_url": relative_url,
+        "aspect_ratio": aspect_ratio,
+        "style": style,
+        "prompt": prompt,
+        "generated_content": creative.generated_content,
+        "generated_at": creative.generated_at,
+    }
+
+
+def get_generated_image_path(db: Session, campaign_id: int, creative_id: int, user_id: int) -> Path:
+    creative = get_creative_for_campaign(
+        db,
+        creative_id=creative_id,
+        campaign_id=campaign_id,
+        user_id=user_id,
+    )
+    if not creative.image_path:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Generated image not found")
+    try:
+        return generated_image_path(creative.image_path)
+    except (OSError, ValueError) as exc:
+        logger.exception("Generated image file is unavailable for creative %s", creative_id)
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Generated image not found") from exc

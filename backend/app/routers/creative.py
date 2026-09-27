@@ -1,4 +1,5 @@
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 
 from app.database import get_db
@@ -11,11 +12,17 @@ from app.schemas.creative import (
     CreativeRecordResponse,
     CreativeSaveRequest,
     CreativeType,
+    ImageGenerationConfigResponse,
+    ImageGenerationRequest,
+    ImageGenerationResponse,
 )
 from app.services.creative_service import (
     create_creative_record,
+    generate_ad_image_for_creative,
     generate_image_creative,
     generate_video_creative,
+    get_generated_image_path,
+    get_creative_for_campaign,
     list_creatives_for_campaign,
 )
 
@@ -76,6 +83,66 @@ def list_creatives_endpoint(
         creatives=[CreativeRecordResponse.model_validate(item) for item in creatives],
         total=len(creatives),
     )
+
+
+@router.get(
+    "/image-config",
+    response_model=ImageGenerationConfigResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Get supported image generation aspect ratios and styles",
+)
+def get_image_generation_config(
+    current_user: User = Depends(get_current_user),
+):
+    return ImageGenerationConfigResponse(
+        aspect_ratios=["1:1", "4:5", "9:16", "16:9", "3:4"],
+        styles=["AI Recommended", "Photographic", "Minimal", "Editorial", "Bold Graphic", "Luxury", "Playful"],
+    )
+
+
+@router.post(
+    "/image",
+    response_model=ImageGenerationResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Generate a marketing advertisement image for an existing image brief",
+)
+def generate_image_endpoint(
+    payload: ImageGenerationRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    result = generate_ad_image_for_creative(
+        db=db,
+        campaign_id=payload.campaign_id,
+        creative_id=payload.creative_id,
+        user_id=current_user.id,
+        aspect_ratio=payload.aspect_ratio,
+        style=payload.style,
+    )
+    return ImageGenerationResponse(**result)
+
+
+@router.get(
+    "/campaign/{campaign_id}/image/{creative_id}",
+    status_code=status.HTTP_200_OK,
+    summary="Serve a generated image for an owned campaign creative",
+)
+def serve_generated_image(
+    campaign_id: int,
+    creative_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    from mimetypes import guess_type
+
+    image_path = get_generated_image_path(
+        db=db,
+        campaign_id=campaign_id,
+        creative_id=creative_id,
+        user_id=current_user.id,
+    )
+    media_type = guess_type(image_path.name)[0] or "application/octet-stream"
+    return FileResponse(image_path, media_type=media_type)
 
 
 @router.post(
