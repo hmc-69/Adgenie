@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import logging
 from datetime import datetime, timezone
-from pathlib import Path
 from typing import Any, Dict, List
 
 from fastapi import HTTPException, status
@@ -19,7 +18,11 @@ from app.services.creative.text_generator import (
     generate_video_script,
     get_image_provider,
 )
-from app.services.image_storage import generated_image_path, save_generated_image_bytes
+from app.services.storage.supabase_storage import (
+    SupabaseStorageError,
+    SupabaseStorageNotFoundError,
+    get_supabase_storage_service,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -197,14 +200,15 @@ def generate_ad_image_for_creative(
         ) from exc
 
     previous_image_path = creative.image_path
+    storage_service = get_supabase_storage_service()
     try:
-        local_path = save_generated_image_bytes(
+        storage_path = storage_service.upload_image(
             image_bytes=generated_image.content,
             content_type=generated_image.content_type,
             campaign_id=campaign.id,
-            original_creative_id=creative.id,
+            creative_id=creative.id,
         )
-    except OSError as exc:
+    except (SupabaseStorageError, ValueError) as exc:
         logger.exception("Generated image storage failed for campaign %s", campaign_id)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -214,7 +218,8 @@ def generate_ad_image_for_creative(
     relative_url = f"/api/creative/campaign/{campaign.id}/image/{creative.id}"
 
     creative.image_url = relative_url
-    creative.image_path = local_path
+    creative.image_path = storage_path
+    creative.image_content_type = generated_image.content_type
     creative.image_aspect_ratio = aspect_ratio
     creative.image_style = style
     creative.image_resolution = None
@@ -234,11 +239,17 @@ def generate_ad_image_for_creative(
         db.refresh(creative)
     except SQLAlchemyError:
         db.rollback()
-        Path(local_path).unlink(missing_ok=True)
+        try:
+            storage_service.delete_image(storage_path)
+        except SupabaseStorageError:
+            logger.warning("Failed to clean up uploaded image after database failure")
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to persist generated image")
 
-    if previous_image_path and previous_image_path != local_path:
-        Path(previous_image_path).unlink(missing_ok=True)
+    if previous_image_path and previous_image_path != storage_path:
+        try:
+            storage_service.delete_image(previous_image_path)
+        except SupabaseStorageError:
+            logger.warning("Failed to delete previous Firebase image for creative %s", creative.id)
 
     return {
         "campaign_id": campaign.id,
@@ -252,7 +263,12 @@ def generate_ad_image_for_creative(
     }
 
 
-def get_generated_image_path(db: Session, campaign_id: int, creative_id: int, user_id: int) -> Path:
+def get_generated_image(
+    db: Session,
+    campaign_id: int,
+    creative_id: int,
+    user_id: int,
+) -> tuple[bytes, str]:
     creative = get_creative_for_campaign(
         db,
         creative_id=creative_id,
@@ -262,7 +278,14 @@ def get_generated_image_path(db: Session, campaign_id: int, creative_id: int, us
     if not creative.image_path:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Generated image not found")
     try:
-        return generated_image_path(creative.image_path)
-    except (OSError, ValueError) as exc:
-        logger.exception("Generated image file is unavailable for creative %s", creative_id)
+        image_bytes = get_supabase_storage_service().download_image(creative.image_path)
+    except SupabaseStorageNotFoundError as exc:
+        logger.warning("Supabase image is unavailable for creative %s", creative_id)
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Generated image not found") from exc
+    except SupabaseStorageError as exc:
+        logger.exception("Supabase image retrieval failed for creative %s", creative_id)
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Image storage is temporarily unavailable. Please try again.",
+        ) from exc
+    return image_bytes, creative.image_content_type or "application/octet-stream"

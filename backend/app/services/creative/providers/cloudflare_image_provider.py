@@ -6,6 +6,7 @@ import re
 from dataclasses import dataclass
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
+from urllib.parse import urlsplit
 
 from app.core.config import settings
 
@@ -89,6 +90,14 @@ class CloudflareImageProvider:
                 f"Cloudflare Worker returned HTTP {exc.code}"
             ) from exc
         except (URLError, TimeoutError, OSError) as exc:
+            reason = getattr(exc, "reason", None)
+            error_code = getattr(reason, "winerror", None) or getattr(reason, "errno", None)
+            logger.warning(
+                "Cloudflare Worker connection failed host=%s exception=%s error_code=%s",
+                urlsplit(self.api_url).hostname or "[invalid-url]",
+                type(exc).__name__,
+                error_code,
+            )
             raise CloudflareImageProviderError("Cloudflare Worker is unavailable") from exc
 
         if content_type not in {"image/jpeg", "image/png", "image/webp"} or not image_bytes:

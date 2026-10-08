@@ -13,6 +13,7 @@ class Creative(Base):
     generated_content = Column(JSON, nullable=False)
     image_url = Column(String(500), nullable=True)
     image_path = Column(String(500), nullable=True)
+    image_content_type = Column(String(50), nullable=True)
     image_aspect_ratio = Column(String(20), nullable=True)
     image_style = Column(String(50), nullable=True)
     image_resolution = Column(String(20), nullable=True)

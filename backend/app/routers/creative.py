@@ -1,5 +1,5 @@
-from fastapi import APIRouter, Depends, HTTPException, status
-from fastapi.responses import FileResponse
+from fastapi import APIRouter, Depends, status
+from fastapi.responses import Response
 from sqlalchemy.orm import Session
 
 from app.database import get_db
@@ -21,7 +21,7 @@ from app.services.creative_service import (
     generate_ad_image_for_creative,
     generate_image_creative,
     generate_video_creative,
-    get_generated_image_path,
+    get_generated_image,
     get_creative_for_campaign,
     list_creatives_for_campaign,
 )
@@ -133,16 +133,13 @@ def serve_generated_image(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    from mimetypes import guess_type
-
-    image_path = get_generated_image_path(
+    image_bytes, content_type = get_generated_image(
         db=db,
         campaign_id=campaign_id,
         creative_id=creative_id,
         user_id=current_user.id,
     )
-    media_type = guess_type(image_path.name)[0] or "application/octet-stream"
-    return FileResponse(image_path, media_type=media_type)
+    return Response(content=image_bytes, media_type=content_type)
 
 
 @router.post(

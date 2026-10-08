@@ -1,6 +1,4 @@
-import tempfile
 import unittest
-from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import Mock, patch
 
@@ -41,6 +39,7 @@ class CloudflareImageGenerationTests(unittest.TestCase):
             },
             image_url=None,
             image_path=None,
+            image_content_type=None,
             image_aspect_ratio=None,
             image_style=None,
             image_resolution=None,
@@ -56,17 +55,23 @@ class CloudflareImageGenerationTests(unittest.TestCase):
     def test_generates_and_persists_cloudflare_image_metadata(self):
         provider = Mock()
         provider.generate_image.return_value = GeneratedImage(b"jpeg-bytes", "image/jpeg")
-        with tempfile.TemporaryDirectory() as directory:
-            with patch("app.services.creative_service.get_image_provider", return_value=provider):
-                with patch("app.services.image_storage.GENERATED_IMAGES_DIR", Path(directory)):
-                    result = generate_ad_image_for_creative(
-                        self.db,
-                        campaign_id=4,
-                        creative_id=9,
-                        user_id=12,
-                        aspect_ratio="4:5",
-                        style="Photographic",
-                    )
+        storage_service = Mock()
+        storage_service.upload_image.return_value = (
+            "campaigns/4/creatives/9/unique-image.jpg"
+        )
+        with patch("app.services.creative_service.get_image_provider", return_value=provider):
+            with patch(
+                "app.services.creative_service.get_supabase_storage_service",
+                return_value=storage_service,
+            ):
+                result = generate_ad_image_for_creative(
+                    self.db,
+                    campaign_id=4,
+                    creative_id=9,
+                    user_id=12,
+                    aspect_ratio="4:5",
+                    style="Photographic",
+                )
 
             provider.generate_image.assert_called_once()
             self.assertEqual(provider.generate_image.call_args.kwargs, {"aspect_ratio": "4:5"})
@@ -74,8 +79,17 @@ class CloudflareImageGenerationTests(unittest.TestCase):
             self.assertIn("Hear the Summer Spirit", prompt)
             self.assertIn("Aspect ratio: 4:5", prompt)
             self.assertIn("Photographic", prompt)
-            self.assertEqual(Path(self.creative.image_path).suffix, ".jpg")
-            self.assertEqual(Path(self.creative.image_path).read_bytes(), b"jpeg-bytes")
+            storage_service.upload_image.assert_called_once_with(
+                image_bytes=b"jpeg-bytes",
+                content_type="image/jpeg",
+                campaign_id=4,
+                creative_id=9,
+            )
+            self.assertEqual(
+                self.creative.image_path,
+                "campaigns/4/creatives/9/unique-image.jpg",
+            )
+            self.assertEqual(self.creative.image_content_type, "image/jpeg")
             self.assertEqual(self.creative.image_url, "/api/creative/campaign/4/image/9")
             self.assertEqual(self.creative.image_aspect_ratio, "4:5")
             self.assertEqual(self.creative.image_style, "Photographic")

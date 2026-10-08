@@ -47,6 +47,7 @@ def ensure_creative_image_columns():
     image_columns = {
         "image_url": "VARCHAR(500) NULL",
         "image_path": "VARCHAR(500) NULL",
+        "image_content_type": "VARCHAR(50) NULL",
         "image_aspect_ratio": "VARCHAR(20) NULL",
         "image_style": "VARCHAR(50) NULL",
         "image_resolution": "VARCHAR(20) NULL",

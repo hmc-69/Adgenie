@@ -21,6 +21,7 @@ PyJWT==2.14.0
 PyMySQL==1.2.3
 python-dotenv==1.2.3
 SQLAlchemy==2.0.54
+supabase==2.27.0
 starlette==1.6.0
 typing-inspection==0.4.4
 typing_extensions==4.16.0
