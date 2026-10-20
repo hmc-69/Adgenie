@@ -16,6 +16,7 @@ class Settings:
     JWT_ACCESS_TOKEN_EXPIRE_MINUTES: int = int(os.getenv("JWT_ACCESS_TOKEN_EXPIRE_MINUTES", "60"))
     AI_PROVIDER: str = os.getenv("AI_PROVIDER", "mock").lower()
     AI_FALLBACK_TO_MOCK: bool = os.getenv("AI_FALLBACK_TO_MOCK", "true").lower() in {"1", "true", "yes", "on"}
+    AUDIENCE_CLASSIFIER_ENABLED: bool = os.getenv("AUDIENCE_CLASSIFIER_ENABLED", "false").lower() in {"1", "true", "yes", "on"}
     IMAGE_PROVIDER: str = os.getenv("IMAGE_PROVIDER", "cloudflare").lower()
     CLOUDFLARE_IMAGE_API_URL: str | None = os.getenv("CLOUDFLARE_IMAGE_API_URL")
     CLOUDFLARE_API_KEY: str | None = os.getenv("CLOUDFLARE_API_KEY")

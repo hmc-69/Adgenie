@@ -161,10 +161,51 @@ class GeminiProviderTests(unittest.TestCase):
             "app.services.creative.providers.gemini_provider.genai.Client"
         ) as client:
             client.return_value.models.generate_content.return_value = invalid
-            with self.assertRaisesRegex(ValueError, "15-second limit"):
+            with self.assertRaisesRegex(ValueError, "invalid video script after one retry"):
                 GeminiCreativeProvider().generate_video_script(self.campaign)
 
         self.assertEqual(client.return_value.models.generate_content.call_count, 2)
+        retry_prompt = " ".join(client.return_value.models.generate_content.call_args.kwargs["contents"].split())
+        self.assertIn("final_cta must exactly match", retry_prompt)
+
+    def test_final_cta_mismatch_is_retried_without_weakening_schema_validation(self):
+        invalid = Mock(
+            parsed={
+                "title": "Wireless earbuds campaign",
+                "duration": 10,
+                "scenes": [
+                    {
+                        "scene_number": 1,
+                        "duration": 5,
+                        "visual": "A person starts a commute.",
+                        "visual_description": "Landscape commute photo.",
+                        "visual_prompt": "Landscape candid commute photo, no text.",
+                        "voiceover": "Take your sound with you.",
+                        "on_screen_text": "Start listening",
+                    },
+                    {
+                        "scene_number": 2,
+                        "duration": 5,
+                        "visual": "Product close-up.",
+                        "visual_description": "Landscape product close-up.",
+                        "visual_prompt": "Landscape product close-up, no text.",
+                        "voiceover": "Shop now.",
+                        "on_screen_text": "Shop Today",
+                    },
+                ],
+                "final_cta": "Shop Now",
+            }
+        )
+        with patch.object(settings, "GEMINI_API_KEY", "test-key"), patch(
+            "app.services.creative.providers.gemini_provider.genai.Client"
+        ) as client:
+            client.return_value.models.generate_content.return_value = invalid
+            with self.assertRaisesRegex(ValueError, "invalid video script after one retry"):
+                GeminiCreativeProvider().generate_video_script(self.campaign)
+
+        self.assertEqual(client.return_value.models.generate_content.call_count, 2)
+        retry_prompt = " ".join(client.return_value.models.generate_content.call_args.kwargs["contents"].split())
+        self.assertIn("final_cta must exactly match", retry_prompt)
 
     def test_creative_routes_require_authentication_dependency(self):
         protected_paths = {

@@ -1,0 +1,54 @@
+{
+  "status": "synthetic_experiment_only",
+  "dataset_path": "D:\\projects\\AdGenie\\backend\\datasets\\audience_analysis\\synthetic_audience_drafts.csv",
+  "dataset_sha256": "0f58f81bfefae55d0d51aa44acc809b1fa70ba7395def0687bfbad81af8572e4",
+  "seed": 42,
+  "feature_columns": [
+    "product_name",
+    "description",
+    "platform",
+    "objective",
+    "tone",
+    "keywords"
+  ],
+  "target_column": "dominant_archetype",
+  "split_method": "deterministic group-aware stratified holdout; group=campaign_group_id; test_fraction=0.2; seed=42",
+  "split_sizes": {
+    "train": 720,
+    "test": 180
+  },
+  "class_mapping": {
+    "business_utility_seekers": 0,
+    "convenience_seekers": 1,
+    "general_interest": 2,
+    "gift_shoppers": 3,
+    "hobby_interest_seekers": 4,
+    "learning_seekers": 5,
+    "quality_seekers": 6,
+    "style_seekers": 7,
+    "value_seekers": 8
+  },
+  "scikit_learn_version": "1.8.0",
+  "model_parameters": {
+    "vectorizer": {
+      "ngram_range": [
+        1,
+        2
+      ],
+      "min_df": 1,
+      "max_features": 20000,
+      "strip_accents": "unicode"
+    },
+    "logistic_regression": {
+      "C": 1.0,
+      "max_iter": 1000,
+      "class_weight": null,
+      "random_state": 42
+    },
+    "baseline": {
+      "strategy": "most_frequent"
+    }
+  },
+  "artifact_trust": "Trusted local output created by this script. Never load arbitrary pickle/joblib files.",
+  "synthetic_labels_explicitly_allowed": true
+}

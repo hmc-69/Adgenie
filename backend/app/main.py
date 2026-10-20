@@ -7,11 +7,13 @@ from app.database import Base, engine, ensure_creative_image_columns, test_datab
 from app.models.user import User  # Ensure models are loaded before create_all
 from app.models.campaign import Campaign
 from app.models.creative import Creative
+from app.models.audience_analysis import AudienceAnalysisRun
 from app.routers.auth import router as auth_router
 from app.routers.campaigns import router as campaigns_router
 from app.routers.creative import router as creative_router
+from app.routers.audience_analysis import router as audience_analysis_router
 
-_REGISTERED_MODELS = (User, Campaign, Creative)
+_REGISTERED_MODELS = (User, Campaign, Creative, AudienceAnalysisRun)
 
 
 @asynccontextmanager
@@ -45,6 +47,7 @@ app.add_middleware(
 app.include_router(auth_router)
 app.include_router(campaigns_router)
 app.include_router(creative_router)
+app.include_router(audience_analysis_router)
 
 
 @app.get("/")

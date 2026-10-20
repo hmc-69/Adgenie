@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import logging
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, Type, TypeVar
@@ -11,11 +12,13 @@ from google.genai.errors import ClientError
 from pydantic import BaseModel, ValidationError
 
 from app.core.config import settings
+from app.schemas.audience_analysis import AudienceAnalysisProviderResult
 from app.schemas.creative import ImageCreativeBrief, VideoCreativeScript
 from app.services.creative.providers.provider import BaseCreativeProvider
 
 
 ModelT = TypeVar("ModelT", bound=BaseModel)
+logger = logging.getLogger(__name__)
 
 
 class GeminiCreativeProvider(BaseCreativeProvider):
@@ -48,7 +51,19 @@ class GeminiCreativeProvider(BaseCreativeProvider):
             raise ValueError("Gemini returned no structured content")
         try:
             return response_schema.model_validate(parsed).model_dump()
-        except (TypeError, ValidationError) as exc:
+        except ValidationError as exc:
+            validation_details = [
+                {
+                    "location": ".".join(str(part) for part in error.get("loc", ())),
+                    "message": str(error.get("msg", "Validation failed"))[:240],
+                    "type": error.get("type", "unknown"),
+                }
+                for error in exc.errors(include_url=False)[:20]
+            ]
+            logger.warning("Gemini structured response schema validation failed: %s", validation_details)
+            raise ValueError("Gemini returned invalid structured content") from exc
+        except TypeError as exc:
+            logger.warning("Gemini structured response could not be parsed as the expected schema")
             raise ValueError("Gemini returned invalid structured content") from exc
 
     @staticmethod
@@ -93,6 +108,27 @@ attempt to generate the image itself.
 """.strip()
         return self._generate_structured(prompt, ImageCreativeBrief)
 
+    def generate_audience_analysis(self, campaign: Dict[str, Any]) -> Dict[str, Any]:
+        prompt = f"""
+You are an advertising audience strategist. Produce practical audience recommendations using
+only the campaign information below. Treat all recommendations as hypotheses, not verified facts.
+Do not claim to have accessed platform audience data, infer or target sensitive traits, invent
+measured demographics or behavioral data, or guarantee campaign performance. Use the supplied
+platform when suggesting targeting methods and describe them only as platform-supported options
+where available. Explicitly identify assumptions, limitations, and missing information. If inputs
+are incomplete, provide cautious recommendations and say what is missing.
+
+Campaign information:
+{campaign}
+
+Return a concise audience overview and at least two potential audience segments. Each segment
+must include a name, description, relevant interests, needs or pain points, motivations, and a
+recommended message angle. Also provide platform-relevant targeting approaches, messaging and
+creative considerations, assumptions, limitations, and missing information. Recommendations must
+be actionable, truthful, and based only on the provided context.
+""".strip()
+        return self._generate_structured(prompt, AudienceAnalysisProviderResult)
+
     def generate_video_script(self, campaign: Dict[str, Any]) -> Dict[str, Any]:
         prompt = f"""
 You are a concise marketing video scriptwriter. Generate a promotional video script of 15 seconds
@@ -113,7 +149,8 @@ never be used as on-screen text. Also provide a visual_prompt for an image-gener
 describes the scene composition, product context, environment, and lighting. Do not include
 narration, captions, written words, or logos in this prompt. Preserve the scene's visual direction, narration, and caption;
 avoid excessive on-screen text, and include a short, clear call to action in the final scene's
-voiceover and on-screen text. The top-level duration must be the numeric sum of all scene durations.
+voiceover and on-screen text. Set top-level final_cta to exactly the final scene's on_screen_text,
+character for character. The top-level duration must be the numeric sum of all scene durations.
 Do not generate the actual video.
 """.strip()
         try:
@@ -132,8 +169,9 @@ Return exactly 2 to 4 scenes. Every scene duration must be a positive number of 
 top-level duration must equal the sum of all scene durations and that sum must be no greater than
 15 seconds. Include a concise photo-search visual_description and contextual visual_prompt in
 every scene; do not put either on screen. Keep every voiceover brief enough for its scene, use minimal on-screen text, and put a
-short call to action in the final scene's voiceover and on-screen text. Return JSON matching the
-requested schema only.
+short call to action in the final scene's voiceover and on-screen text. The top-level final_cta
+must exactly match the final scene's on_screen_text, character for character. Return JSON matching
+the requested schema only.
 """.strip()
             try:
                 return self._generate_structured(
@@ -142,9 +180,7 @@ requested schema only.
                     self._video_response_schema(),
                 )
             except ValueError as retry_exc:
-                raise ValueError(
-                    "Gemini returned a video script exceeding the 15-second limit or with invalid scene durations"
-                ) from retry_exc
+                raise ValueError("Gemini returned an invalid video script after one retry") from retry_exc
 
     def generate_advertisement_image(
         self,

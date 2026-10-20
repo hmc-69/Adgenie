@@ -1,0 +1,1161 @@
+{
+  "status": "synthetic_experiment_only",
+  "warning": "Synthetic results are pipeline smoke tests only; they are not real-world performance estimates.",
+  "dataset_rows": 1800,
+  "dataset_class_counts": {
+    "business_utility_seekers": 200,
+    "convenience_seekers": 200,
+    "general_interest": 200,
+    "gift_shoppers": 200,
+    "hobby_interest_seekers": 200,
+    "learning_seekers": 200,
+    "quality_seekers": 200,
+    "style_seekers": 200,
+    "value_seekers": 200
+  },
+  "split_sizes": {
+    "train": 1440,
+    "test": 360
+  },
+  "split_class_counts": {
+    "train": {
+      "business_utility_seekers": 160,
+      "convenience_seekers": 160,
+      "general_interest": 160,
+      "gift_shoppers": 160,
+      "hobby_interest_seekers": 160,
+      "learning_seekers": 160,
+      "quality_seekers": 160,
+      "style_seekers": 160,
+      "value_seekers": 160
+    },
+    "test": {
+      "business_utility_seekers": 40,
+      "convenience_seekers": 40,
+      "general_interest": 40,
+      "gift_shoppers": 40,
+      "hobby_interest_seekers": 40,
+      "learning_seekers": 40,
+      "quality_seekers": 40,
+      "style_seekers": 40,
+      "value_seekers": 40
+    }
+  },
+  "model": {
+    "accuracy": 1.0,
+    "macro_precision": 1.0,
+    "macro_recall": 1.0,
+    "macro_f1": 1.0,
+    "per_class": {
+      "business_utility_seekers": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1-score": 1.0,
+        "support": 40.0
+      },
+      "convenience_seekers": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1-score": 1.0,
+        "support": 40.0
+      },
+      "general_interest": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1-score": 1.0,
+        "support": 40.0
+      },
+      "gift_shoppers": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1-score": 1.0,
+        "support": 40.0
+      },
+      "hobby_interest_seekers": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1-score": 1.0,
+        "support": 40.0
+      },
+      "learning_seekers": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1-score": 1.0,
+        "support": 40.0
+      },
+      "quality_seekers": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1-score": 1.0,
+        "support": 40.0
+      },
+      "style_seekers": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1-score": 1.0,
+        "support": 40.0
+      },
+      "value_seekers": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1-score": 1.0,
+        "support": 40.0
+      }
+    },
+    "confusion_matrix_labels": [
+      "business_utility_seekers",
+      "convenience_seekers",
+      "general_interest",
+      "gift_shoppers",
+      "hobby_interest_seekers",
+      "learning_seekers",
+      "quality_seekers",
+      "style_seekers",
+      "value_seekers"
+    ],
+    "confusion_matrix": [
+      [
+        40,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        40,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        40,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        40,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        40,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        40,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        40,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        40,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        40
+      ]
+    ]
+  },
+  "dummy_most_frequent_baseline": {
+    "accuracy": 0.1111111111111111,
+    "macro_precision": 0.012345679012345678,
+    "macro_recall": 0.1111111111111111,
+    "macro_f1": 0.022222222222222223,
+    "per_class": {
+      "business_utility_seekers": {
+        "precision": 0.1111111111111111,
+        "recall": 1.0,
+        "f1-score": 0.2,
+        "support": 40.0
+      },
+      "convenience_seekers": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1-score": 0.0,
+        "support": 40.0
+      },
+      "general_interest": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1-score": 0.0,
+        "support": 40.0
+      },
+      "gift_shoppers": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1-score": 0.0,
+        "support": 40.0
+      },
+      "hobby_interest_seekers": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1-score": 0.0,
+        "support": 40.0
+      },
+      "learning_seekers": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1-score": 0.0,
+        "support": 40.0
+      },
+      "quality_seekers": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1-score": 0.0,
+        "support": 40.0
+      },
+      "style_seekers": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1-score": 0.0,
+        "support": 40.0
+      },
+      "value_seekers": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1-score": 0.0,
+        "support": 40.0
+      }
+    },
+    "confusion_matrix_labels": [
+      "business_utility_seekers",
+      "convenience_seekers",
+      "general_interest",
+      "gift_shoppers",
+      "hobby_interest_seekers",
+      "learning_seekers",
+      "quality_seekers",
+      "style_seekers",
+      "value_seekers"
+    ],
+    "confusion_matrix": [
+      [
+        40,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        40,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        40,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        40,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        40,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        40,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        40,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        40,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        40,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    ]
+  },
+  "primary_evaluation": "group_aware",
+  "evaluations": {
+    "group_aware": {
+      "split_method": "deterministic group-aware stratified holdout; group=campaign_group_id; test_fraction=0.2; seed=42",
+      "split_sizes": {
+        "train": 1440,
+        "test": 360
+      },
+      "split_class_counts": {
+        "train": {
+          "business_utility_seekers": 160,
+          "convenience_seekers": 160,
+          "general_interest": 160,
+          "gift_shoppers": 160,
+          "hobby_interest_seekers": 160,
+          "learning_seekers": 160,
+          "quality_seekers": 160,
+          "style_seekers": 160,
+          "value_seekers": 160
+        },
+        "test": {
+          "business_utility_seekers": 40,
+          "convenience_seekers": 40,
+          "general_interest": 40,
+          "gift_shoppers": 40,
+          "hobby_interest_seekers": 40,
+          "learning_seekers": 40,
+          "quality_seekers": 40,
+          "style_seekers": 40,
+          "value_seekers": 40
+        }
+      },
+      "train_group_count": 32,
+      "test_group_count": 8,
+      "group_overlap_count": 0,
+      "model_artifact": "tfidf_logistic_regression.joblib",
+      "model": {
+        "accuracy": 1.0,
+        "macro_precision": 1.0,
+        "macro_recall": 1.0,
+        "macro_f1": 1.0,
+        "per_class": {
+          "business_utility_seekers": {
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1-score": 1.0,
+            "support": 40.0
+          },
+          "convenience_seekers": {
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1-score": 1.0,
+            "support": 40.0
+          },
+          "general_interest": {
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1-score": 1.0,
+            "support": 40.0
+          },
+          "gift_shoppers": {
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1-score": 1.0,
+            "support": 40.0
+          },
+          "hobby_interest_seekers": {
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1-score": 1.0,
+            "support": 40.0
+          },
+          "learning_seekers": {
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1-score": 1.0,
+            "support": 40.0
+          },
+          "quality_seekers": {
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1-score": 1.0,
+            "support": 40.0
+          },
+          "style_seekers": {
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1-score": 1.0,
+            "support": 40.0
+          },
+          "value_seekers": {
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1-score": 1.0,
+            "support": 40.0
+          }
+        },
+        "confusion_matrix_labels": [
+          "business_utility_seekers",
+          "convenience_seekers",
+          "general_interest",
+          "gift_shoppers",
+          "hobby_interest_seekers",
+          "learning_seekers",
+          "quality_seekers",
+          "style_seekers",
+          "value_seekers"
+        ],
+        "confusion_matrix": [
+          [
+            40,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            40,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            40,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            40,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            40,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            40,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            40,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            40,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            40
+          ]
+        ]
+      },
+      "dummy_most_frequent_baseline": {
+        "accuracy": 0.1111111111111111,
+        "macro_precision": 0.012345679012345678,
+        "macro_recall": 0.1111111111111111,
+        "macro_f1": 0.022222222222222223,
+        "per_class": {
+          "business_utility_seekers": {
+            "precision": 0.1111111111111111,
+            "recall": 1.0,
+            "f1-score": 0.2,
+            "support": 40.0
+          },
+          "convenience_seekers": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1-score": 0.0,
+            "support": 40.0
+          },
+          "general_interest": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1-score": 0.0,
+            "support": 40.0
+          },
+          "gift_shoppers": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1-score": 0.0,
+            "support": 40.0
+          },
+          "hobby_interest_seekers": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1-score": 0.0,
+            "support": 40.0
+          },
+          "learning_seekers": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1-score": 0.0,
+            "support": 40.0
+          },
+          "quality_seekers": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1-score": 0.0,
+            "support": 40.0
+          },
+          "style_seekers": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1-score": 0.0,
+            "support": 40.0
+          },
+          "value_seekers": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1-score": 0.0,
+            "support": 40.0
+          }
+        },
+        "confusion_matrix_labels": [
+          "business_utility_seekers",
+          "convenience_seekers",
+          "general_interest",
+          "gift_shoppers",
+          "hobby_interest_seekers",
+          "learning_seekers",
+          "quality_seekers",
+          "style_seekers",
+          "value_seekers"
+        ],
+        "confusion_matrix": [
+          [
+            40,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            40,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            40,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            40,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            40,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            40,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            40,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            40,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            40,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        ]
+      }
+    },
+    "row_stratified": {
+      "split_method": "deterministic per-class row-stratified holdout; test_fraction=0.2; seed=42",
+      "split_sizes": {
+        "train": 1440,
+        "test": 360
+      },
+      "split_class_counts": {
+        "train": {
+          "business_utility_seekers": 160,
+          "convenience_seekers": 160,
+          "general_interest": 160,
+          "gift_shoppers": 160,
+          "hobby_interest_seekers": 160,
+          "learning_seekers": 160,
+          "quality_seekers": 160,
+          "style_seekers": 160,
+          "value_seekers": 160
+        },
+        "test": {
+          "business_utility_seekers": 40,
+          "convenience_seekers": 40,
+          "general_interest": 40,
+          "gift_shoppers": 40,
+          "hobby_interest_seekers": 40,
+          "learning_seekers": 40,
+          "quality_seekers": 40,
+          "style_seekers": 40,
+          "value_seekers": 40
+        }
+      },
+      "train_group_count": 40,
+      "test_group_count": 40,
+      "group_overlap_count": 40,
+      "model_artifact": "tfidf_logistic_regression_row_stratified.joblib",
+      "model": {
+        "accuracy": 0.9777777777777777,
+        "macro_precision": 0.9789911308203991,
+        "macro_recall": 0.9777777777777779,
+        "macro_f1": 0.9777472924159084,
+        "per_class": {
+          "business_utility_seekers": {
+            "precision": 1.0,
+            "recall": 0.95,
+            "f1-score": 0.9743589743589743,
+            "support": 40.0
+          },
+          "convenience_seekers": {
+            "precision": 0.975609756097561,
+            "recall": 1.0,
+            "f1-score": 0.9876543209876543,
+            "support": 40.0
+          },
+          "general_interest": {
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1-score": 1.0,
+            "support": 40.0
+          },
+          "gift_shoppers": {
+            "precision": 0.975,
+            "recall": 0.975,
+            "f1-score": 0.975,
+            "support": 40.0
+          },
+          "hobby_interest_seekers": {
+            "precision": 0.9512195121951219,
+            "recall": 0.975,
+            "f1-score": 0.9629629629629629,
+            "support": 40.0
+          },
+          "learning_seekers": {
+            "precision": 0.9090909090909091,
+            "recall": 1.0,
+            "f1-score": 0.9523809523809523,
+            "support": 40.0
+          },
+          "quality_seekers": {
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1-score": 1.0,
+            "support": 40.0
+          },
+          "style_seekers": {
+            "precision": 1.0,
+            "recall": 0.9,
+            "f1-score": 0.9473684210526315,
+            "support": 40.0
+          },
+          "value_seekers": {
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1-score": 1.0,
+            "support": 40.0
+          }
+        },
+        "confusion_matrix_labels": [
+          "business_utility_seekers",
+          "convenience_seekers",
+          "general_interest",
+          "gift_shoppers",
+          "hobby_interest_seekers",
+          "learning_seekers",
+          "quality_seekers",
+          "style_seekers",
+          "value_seekers"
+        ],
+        "confusion_matrix": [
+          [
+            38,
+            0,
+            0,
+            0,
+            2,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            40,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            40,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            1,
+            0,
+            39,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            1,
+            39,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            40,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            40,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            4,
+            0,
+            36,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            40
+          ]
+        ]
+      },
+      "dummy_most_frequent_baseline": {
+        "accuracy": 0.1111111111111111,
+        "macro_precision": 0.012345679012345678,
+        "macro_recall": 0.1111111111111111,
+        "macro_f1": 0.022222222222222223,
+        "per_class": {
+          "business_utility_seekers": {
+            "precision": 0.1111111111111111,
+            "recall": 1.0,
+            "f1-score": 0.2,
+            "support": 40.0
+          },
+          "convenience_seekers": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1-score": 0.0,
+            "support": 40.0
+          },
+          "general_interest": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1-score": 0.0,
+            "support": 40.0
+          },
+          "gift_shoppers": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1-score": 0.0,
+            "support": 40.0
+          },
+          "hobby_interest_seekers": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1-score": 0.0,
+            "support": 40.0
+          },
+          "learning_seekers": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1-score": 0.0,
+            "support": 40.0
+          },
+          "quality_seekers": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1-score": 0.0,
+            "support": 40.0
+          },
+          "style_seekers": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1-score": 0.0,
+            "support": 40.0
+          },
+          "value_seekers": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1-score": 0.0,
+            "support": 40.0
+          }
+        },
+        "confusion_matrix_labels": [
+          "business_utility_seekers",
+          "convenience_seekers",
+          "general_interest",
+          "gift_shoppers",
+          "hobby_interest_seekers",
+          "learning_seekers",
+          "quality_seekers",
+          "style_seekers",
+          "value_seekers"
+        ],
+        "confusion_matrix": [
+          [
+            40,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            40,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            40,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            40,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            40,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            40,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            40,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            40,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            40,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        ]
+      }
+    }
+  }
+}

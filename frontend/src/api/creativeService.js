@@ -1,8 +1,9 @@
-import { apiClient } from './client';
-import { getRenderedVideoPath } from '../utils/videoPlayback';
+import { apiClient } from './client.js';
+import { getRenderedVideoPath } from '../utils/videoPlayback.js';
 
 export const creativeService = {
   generateImageBrief: async (campaignId) => {
+    console.info('[image-brief-debug]', { stage: 'generateImageBrief_service_start', campaignId });
     const response = await apiClient.post('/api/creative/image-brief', { campaign_id: Number(campaignId) });
     return response.data;
   },

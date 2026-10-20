@@ -1,5 +1,6 @@
 # Python
 backend/venv/
+backend/datasets/audience_analysis/.venv/
 __pycache__/
 *.pyc
 

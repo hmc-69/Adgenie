@@ -10,6 +10,9 @@ class BaseCreativeProvider:
     def generate_video_script(self, campaign: Dict[str, Any]) -> Dict[str, Any]:
         raise NotImplementedError
 
+    def generate_audience_analysis(self, campaign: Dict[str, Any]) -> Dict[str, Any]:
+        raise NotImplementedError
+
     def generate_advertisement_image(
         self,
         campaign: Dict[str, Any],

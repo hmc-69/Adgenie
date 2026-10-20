@@ -106,3 +106,44 @@ class MockCreativeProvider(BaseCreativeProvider):
             "scenes": scenes,
             "final_cta": cta,
         }
+
+    def generate_audience_analysis(self, campaign: Dict[str, Any]) -> Dict[str, Any]:
+        product = self._safe_text(campaign.get("product_name"), "the product")
+        platform = self._safe_text(campaign.get("platform"), "the selected platform")
+        audience = self._safe_text(campaign.get("target_audience"), "people who may benefit from the product")
+        description = self._safe_text(campaign.get("description"), "")
+        return {
+            "audience_overview": f"Potential audiences for {product}, based on the supplied campaign context.",
+            "segments": [
+                {
+                    "name": "People matching the stated audience",
+                    "description": audience,
+                    "relevant_interests": [product],
+                    "needs_pain_points": [description or "Needs are not fully specified in the campaign information."],
+                    "motivations": ["Explore a product that may fit their stated needs."],
+                    "recommended_message_angle": f"Explain how {product} relates to the audience's stated needs without adding unsupported claims.",
+                },
+                {
+                    "name": "Adjacent interest group",
+                    "description": f"People interested in topics related to {product}.",
+                    "relevant_interests": [product],
+                    "needs_pain_points": ["Their specific needs are not established by the supplied information."],
+                    "motivations": ["Learn whether the product is relevant to them."],
+                    "recommended_message_angle": f"Introduce {product} with clear, factual information and a low-pressure next step.",
+                },
+            ],
+            "targeting_approaches": [
+                {
+                    "platform": platform,
+                    "approaches": [
+                        "Use platform-supported contextual or interest targeting related to the product, where available.",
+                        "Test broad and relevant interest groups separately; do not assume either will perform better.",
+                    ],
+                }
+            ],
+            "messaging_recommendations": ["Use specific product information from the campaign brief."],
+            "creative_considerations": ["Use a clear product benefit and a platform-appropriate format."],
+            "assumptions": ["Audience suggestions are inferred from the campaign context."],
+            "limitations": ["No platform audience database or measured audience data was accessed."],
+            "missing_information": ["Customer research or validated audience data could refine these recommendations."],
+        }

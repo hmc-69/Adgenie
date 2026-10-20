@@ -1,0 +1,388 @@
+{
+  "status": "synthetic_experiment_only",
+  "warning": "Synthetic results are pipeline smoke tests only; they are not real-world performance estimates.",
+  "dataset_rows": 900,
+  "dataset_class_counts": {
+    "business_utility_seekers": 100,
+    "convenience_seekers": 100,
+    "general_interest": 100,
+    "gift_shoppers": 100,
+    "hobby_interest_seekers": 100,
+    "learning_seekers": 100,
+    "quality_seekers": 100,
+    "style_seekers": 100,
+    "value_seekers": 100
+  },
+  "split_sizes": {
+    "train": 720,
+    "test": 180
+  },
+  "split_class_counts": {
+    "train": {
+      "business_utility_seekers": 80,
+      "convenience_seekers": 80,
+      "general_interest": 80,
+      "gift_shoppers": 80,
+      "hobby_interest_seekers": 80,
+      "learning_seekers": 80,
+      "quality_seekers": 80,
+      "style_seekers": 80,
+      "value_seekers": 80
+    },
+    "test": {
+      "business_utility_seekers": 20,
+      "convenience_seekers": 20,
+      "general_interest": 20,
+      "gift_shoppers": 20,
+      "hobby_interest_seekers": 20,
+      "learning_seekers": 20,
+      "quality_seekers": 20,
+      "style_seekers": 20,
+      "value_seekers": 20
+    }
+  },
+  "model": {
+    "accuracy": 1.0,
+    "macro_f1": 1.0,
+    "per_class": {
+      "business_utility_seekers": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1-score": 1.0,
+        "support": 20.0
+      },
+      "convenience_seekers": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1-score": 1.0,
+        "support": 20.0
+      },
+      "general_interest": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1-score": 1.0,
+        "support": 20.0
+      },
+      "gift_shoppers": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1-score": 1.0,
+        "support": 20.0
+      },
+      "hobby_interest_seekers": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1-score": 1.0,
+        "support": 20.0
+      },
+      "learning_seekers": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1-score": 1.0,
+        "support": 20.0
+      },
+      "quality_seekers": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1-score": 1.0,
+        "support": 20.0
+      },
+      "style_seekers": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1-score": 1.0,
+        "support": 20.0
+      },
+      "value_seekers": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1-score": 1.0,
+        "support": 20.0
+      }
+    },
+    "confusion_matrix_labels": [
+      "business_utility_seekers",
+      "convenience_seekers",
+      "general_interest",
+      "gift_shoppers",
+      "hobby_interest_seekers",
+      "learning_seekers",
+      "quality_seekers",
+      "style_seekers",
+      "value_seekers"
+    ],
+    "confusion_matrix": [
+      [
+        20,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        20,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        20,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        20,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        20,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        20,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        20,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        20,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        20
+      ]
+    ]
+  },
+  "dummy_most_frequent_baseline": {
+    "accuracy": 0.1111111111111111,
+    "macro_f1": 0.022222222222222223,
+    "per_class": {
+      "business_utility_seekers": {
+        "precision": 0.1111111111111111,
+        "recall": 1.0,
+        "f1-score": 0.2,
+        "support": 20.0
+      },
+      "convenience_seekers": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1-score": 0.0,
+        "support": 20.0
+      },
+      "general_interest": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1-score": 0.0,
+        "support": 20.0
+      },
+      "gift_shoppers": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1-score": 0.0,
+        "support": 20.0
+      },
+      "hobby_interest_seekers": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1-score": 0.0,
+        "support": 20.0
+      },
+      "learning_seekers": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1-score": 0.0,
+        "support": 20.0
+      },
+      "quality_seekers": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1-score": 0.0,
+        "support": 20.0
+      },
+      "style_seekers": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1-score": 0.0,
+        "support": 20.0
+      },
+      "value_seekers": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1-score": 0.0,
+        "support": 20.0
+      }
+    },
+    "confusion_matrix_labels": [
+      "business_utility_seekers",
+      "convenience_seekers",
+      "general_interest",
+      "gift_shoppers",
+      "hobby_interest_seekers",
+      "learning_seekers",
+      "quality_seekers",
+      "style_seekers",
+      "value_seekers"
+    ],
+    "confusion_matrix": [
+      [
+        20,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        20,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        20,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        20,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        20,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        20,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        20,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        20,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        20,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    ]
+  }
+}

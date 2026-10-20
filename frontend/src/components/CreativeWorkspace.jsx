@@ -44,6 +44,7 @@ const formatHashtags = (value) => {
 
 export const CreativeWorkspace = ({
   type,
+  campaign,
   isGenerating,
   isGeneratingImage,
   generatedContent,
@@ -67,6 +68,13 @@ export const CreativeWorkspace = ({
 }) => {
   const [localImage, setLocalImage] = useState(emptyImage);
   const [localVideo, setLocalVideo] = useState(emptyVideo);
+  const handleGenerateClick = () => {
+    if (type === 'image') {
+      console.info('[image-brief-debug]', { stage: 'button_click_handler_start', campaignId: campaign?.id });
+      console.info('[image-brief-debug]', { stage: 'before_parent_callback', campaignId: campaign?.id });
+    }
+    onGenerate();
+  };
   const videoTotalDuration = useMemo(
     () => localVideo.scenes.reduce((total, scene) => total + (Number(scene.duration) || 0), 0),
     [localVideo.scenes],
@@ -162,7 +170,7 @@ export const CreativeWorkspace = ({
         <div className="creative-workspace-header">
           <div><p className="page-kicker">Image Ad</p><h3>Creative brief</h3></div>
           <div className="creative-actions">
-            <button type="button" className="btn-primary" onClick={onGenerate} disabled={isGenerating}>
+            <button type="button" className="btn-primary" onClick={handleGenerateClick} disabled={isGenerating}>
               {isGenerating ? 'Generating brief...' : 'Generate Brief'}
             </button>
             <button type="button" className="btn-secondary" onClick={onRegenerate} disabled={isGenerating || !hasGenerated}>Regenerate Brief</button>

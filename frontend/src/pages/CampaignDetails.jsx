@@ -8,6 +8,7 @@ import { ConfirmDialog } from '../components/ConfirmDialog';
 import { CreativeList } from '../components/CreativeList';
 import { CreativeModal } from '../components/CreativeModal';
 import { CreativeWorkspace } from '../components/CreativeWorkspace';
+import { AudienceAnalysisPanel } from '../components/AudienceAnalysisPanel';
 
 const formatDate = (dateString) => {
   if (!dateString) return 'N/A';
@@ -230,16 +231,22 @@ export const CampaignDetails = () => {
   };
 
   const handleGenerateCreative = async () => {
+    if (creativeType === 'image') {
+      console.info('[image-brief-debug]', { stage: 'parent_callback_start', campaignId: campaign?.id });
+    }
     if (!campaign?.id) return;
     selectedCreativeIdRef.current = null;
     setCreativeError('');
     setIsGeneratingCreative(true);
 
     try {
-      const payload =
-        creativeType === 'image'
-          ? await creativeService.generateImageBrief(campaign.id)
-          : await creativeService.generateVideoScript(campaign.id);
+      let payload;
+      if (creativeType === 'image') {
+        console.info('[image-brief-debug]', { stage: 'before_generateImageBrief_service_call', campaignId: campaign.id });
+        payload = await creativeService.generateImageBrief(campaign.id);
+      } else {
+        payload = await creativeService.generateVideoScript(campaign.id);
+      }
       setCreativeContent(payload.generated_content || payload);
       setLastSavedCreative(null);
     } catch (error) {
@@ -476,6 +483,8 @@ export const CampaignDetails = () => {
           )}
         </div>
       </section>
+
+      <AudienceAnalysisPanel key={campaign.id} campaignId={campaign.id} />
 
       <section className="creative-studio-section" id="creative-studio">
         <div className="studio-heading-row">

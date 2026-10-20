@@ -1,0 +1,227 @@
+{
+  "input_path": "D:\\projects\\AdGenie\\backend\\datasets\\audience_analysis\\synthetic_audience_drafts_v3.csv",
+  "row_count": 1800,
+  "column_count": 15,
+  "column_names": [
+    "example_id",
+    "campaign_group_id",
+    "product_name",
+    "description",
+    "platform",
+    "objective",
+    "tone",
+    "keywords",
+    "dominant_archetype",
+    "annotator_1_label",
+    "annotator_2_label",
+    "adjudicated_label",
+    "source_reference",
+    "license_or_permission",
+    "annotation_status"
+  ],
+  "likely_text_fields": [
+    "description"
+  ],
+  "missing_values": {
+    "counts": {
+      "example_id": 0,
+      "campaign_group_id": 0,
+      "product_name": 0,
+      "description": 0,
+      "platform": 0,
+      "objective": 0,
+      "tone": 0,
+      "keywords": 0,
+      "dominant_archetype": 0,
+      "annotator_1_label": 1800,
+      "annotator_2_label": 1800,
+      "adjudicated_label": 1800,
+      "source_reference": 0,
+      "license_or_permission": 0,
+      "annotation_status": 0
+    },
+    "rates": {
+      "example_id": 0.0,
+      "campaign_group_id": 0.0,
+      "product_name": 0.0,
+      "description": 0.0,
+      "platform": 0.0,
+      "objective": 0.0,
+      "tone": 0.0,
+      "keywords": 0.0,
+      "dominant_archetype": 0.0,
+      "annotator_1_label": 1.0,
+      "annotator_2_label": 1.0,
+      "adjudicated_label": 1.0,
+      "source_reference": 0.0,
+      "license_or_permission": 0.0,
+      "annotation_status": 0.0
+    }
+  },
+  "duplicate_rows": 0,
+  "likely_duplicate_campaign_briefs": 0,
+  "description_duplicate_count": 0,
+  "near_duplicate_descriptions": {
+    "column": "description",
+    "method": "token-set Jaccard",
+    "threshold": 0.85,
+    "pair_count": 0,
+    "csv_row_pairs": [],
+    "pairs_truncated": false
+  },
+  "unique_value_counts": {
+    "example_id": 1800,
+    "campaign_group_id": 40,
+    "product_name": 40,
+    "description": 1800,
+    "platform": 8,
+    "objective": 9,
+    "tone": 10,
+    "keywords": 1238,
+    "dominant_archetype": 9,
+    "annotator_1_label": 0,
+    "annotator_2_label": 0,
+    "adjudicated_label": 0,
+    "source_reference": 1,
+    "license_or_permission": 1,
+    "annotation_status": 1
+  },
+  "candidate_label_report": {
+    "column": "dominant_archetype",
+    "class_counts": {
+      "business_utility_seekers": 200,
+      "convenience_seekers": 200,
+      "general_interest": 200,
+      "gift_shoppers": 200,
+      "hobby_interest_seekers": 200,
+      "learning_seekers": 200,
+      "quality_seekers": 200,
+      "style_seekers": 200,
+      "value_seekers": 200
+    },
+    "missing_count": 0,
+    "labels_match_approved_archetypes": true,
+    "invalid_labels": {},
+    "class_imbalance": {
+      "largest_to_smallest_ratio": 1.0,
+      "represented_class_count": 9
+    }
+  },
+  "potential_label_leakage": {
+    "method": "document-frequency heuristic over selected text fields; review flagged terms and repeated six-token prefixes",
+    "distinctive_label_linked_terms": [],
+    "distinctive_term_count": 0,
+    "repeated_description_prefix_count": 509,
+    "largest_repeated_prefix_group_size": 7
+  },
+  "provenance_and_status_counts": {
+    "source_reference": {
+      "Synthetic generated draft; no external source": 1800
+    },
+    "license_or_permission": {
+      "Synthetic draft; not validated for production use": 1800
+    },
+    "annotation_status": {
+      "synthetic_ai_proposed_not_human_validated": 1800
+    }
+  },
+  "potential_identifier_columns": [
+    "example_id",
+    "campaign_group_id"
+  ],
+  "potential_sensitive_columns": [],
+  "potential_personal_value_signals": {
+    "example_id": {
+      "phone_like": 1
+    }
+  },
+  "potential_target_leakage_or_post_campaign_fields": [],
+  "campaign_grouping": {
+    "column": "campaign_group_id",
+    "can_establish_groups": true,
+    "unique_group_count": 40,
+    "missing_rows": 0,
+    "single_record_group_count": 0,
+    "class_distribution": {
+      "business_utility_seekers": {
+        "row_count": 200,
+        "distinct_group_count": 40,
+        "group_size_distribution": {
+          "5": 40
+        },
+        "largest_group_size": 5
+      },
+      "convenience_seekers": {
+        "row_count": 200,
+        "distinct_group_count": 40,
+        "group_size_distribution": {
+          "5": 40
+        },
+        "largest_group_size": 5
+      },
+      "general_interest": {
+        "row_count": 200,
+        "distinct_group_count": 40,
+        "group_size_distribution": {
+          "5": 40
+        },
+        "largest_group_size": 5
+      },
+      "gift_shoppers": {
+        "row_count": 200,
+        "distinct_group_count": 40,
+        "group_size_distribution": {
+          "5": 40
+        },
+        "largest_group_size": 5
+      },
+      "hobby_interest_seekers": {
+        "row_count": 200,
+        "distinct_group_count": 40,
+        "group_size_distribution": {
+          "5": 40
+        },
+        "largest_group_size": 5
+      },
+      "learning_seekers": {
+        "row_count": 200,
+        "distinct_group_count": 40,
+        "group_size_distribution": {
+          "5": 40
+        },
+        "largest_group_size": 5
+      },
+      "quality_seekers": {
+        "row_count": 200,
+        "distinct_group_count": 40,
+        "group_size_distribution": {
+          "5": 40
+        },
+        "largest_group_size": 5
+      },
+      "style_seekers": {
+        "row_count": 200,
+        "distinct_group_count": 40,
+        "group_size_distribution": {
+          "5": 40
+        },
+        "largest_group_size": 5
+      },
+      "value_seekers": {
+        "row_count": 200,
+        "distinct_group_count": 40,
+        "group_size_distribution": {
+          "5": 40
+        },
+        "largest_group_size": 5
+      }
+    },
+    "each_class_in_at_least_two_groups": true,
+    "potential_group_split_feasible": true
+  },
+  "warnings": [
+    "Potential identifiers or personal/sensitive data require privacy review; values are not included in this report.",
+    "Potential label-linked wording or repeated description templates were detected; inspect before model evaluation."
+  ],
+  "permission_notice": "Availability or downloadability does not establish permission to store or use data for ML training; review source terms and record evidence separately."
+}

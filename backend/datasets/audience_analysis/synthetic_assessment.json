@@ -1,0 +1,116 @@
+{
+  "input_path": "D:\\projects\\AdGenie\\backend\\datasets\\audience_analysis\\synthetic_audience_drafts.csv",
+  "row_count": 900,
+  "column_count": 15,
+  "column_names": [
+    "example_id",
+    "campaign_group_id",
+    "product_name",
+    "description",
+    "platform",
+    "objective",
+    "tone",
+    "keywords",
+    "dominant_archetype",
+    "annotator_1_label",
+    "annotator_2_label",
+    "adjudicated_label",
+    "source_reference",
+    "license_or_permission",
+    "annotation_status"
+  ],
+  "likely_text_fields": [
+    "description"
+  ],
+  "missing_values": {
+    "counts": {
+      "example_id": 0,
+      "campaign_group_id": 0,
+      "product_name": 0,
+      "description": 0,
+      "platform": 0,
+      "objective": 0,
+      "tone": 0,
+      "keywords": 0,
+      "dominant_archetype": 0,
+      "annotator_1_label": 900,
+      "annotator_2_label": 900,
+      "adjudicated_label": 900,
+      "source_reference": 0,
+      "license_or_permission": 0,
+      "annotation_status": 0
+    },
+    "rates": {
+      "example_id": 0.0,
+      "campaign_group_id": 0.0,
+      "product_name": 0.0,
+      "description": 0.0,
+      "platform": 0.0,
+      "objective": 0.0,
+      "tone": 0.0,
+      "keywords": 0.0,
+      "dominant_archetype": 0.0,
+      "annotator_1_label": 1.0,
+      "annotator_2_label": 1.0,
+      "adjudicated_label": 1.0,
+      "source_reference": 0.0,
+      "license_or_permission": 0.0,
+      "annotation_status": 0.0
+    }
+  },
+  "duplicate_rows": 0,
+  "likely_duplicate_campaign_briefs": 8,
+  "unique_value_counts": {
+    "example_id": 900,
+    "campaign_group_id": 40,
+    "product_name": 40,
+    "description": 892,
+    "platform": 8,
+    "objective": 9,
+    "tone": 10,
+    "keywords": 360,
+    "dominant_archetype": 9,
+    "annotator_1_label": 0,
+    "annotator_2_label": 0,
+    "adjudicated_label": 0,
+    "source_reference": 1,
+    "license_or_permission": 1,
+    "annotation_status": 1
+  },
+  "candidate_label_report": {
+    "column": "dominant_archetype",
+    "class_counts": {
+      "business_utility_seekers": 100,
+      "convenience_seekers": 100,
+      "general_interest": 100,
+      "gift_shoppers": 100,
+      "hobby_interest_seekers": 100,
+      "learning_seekers": 100,
+      "quality_seekers": 100,
+      "style_seekers": 100,
+      "value_seekers": 100
+    },
+    "missing_count": 0,
+    "labels_match_approved_archetypes": true,
+    "invalid_labels": {}
+  },
+  "potential_identifier_columns": [
+    "example_id",
+    "campaign_group_id"
+  ],
+  "potential_sensitive_columns": [],
+  "potential_personal_value_signals": {},
+  "potential_target_leakage_or_post_campaign_fields": [],
+  "campaign_grouping": {
+    "column": "campaign_group_id",
+    "can_establish_groups": true,
+    "unique_group_count": 40,
+    "missing_rows": 0,
+    "single_record_group_count": 0
+  },
+  "warnings": [
+    "Found 8 likely duplicate campaign brief(s) based on candidate text fields.",
+    "Potential identifiers or personal/sensitive data require privacy review; values are not included in this report."
+  ],
+  "permission_notice": "Availability or downloadability does not establish permission to store or use data for ML training; review source terms and record evidence separately."
+}
