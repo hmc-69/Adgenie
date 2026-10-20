@@ -1,4 +1,5 @@
 import { apiClient } from './client';
+import { getRenderedVideoPath } from '../utils/videoPlayback';
 
 export const creativeService = {
   generateImageBrief: async (campaignId) => {
@@ -8,6 +9,27 @@ export const creativeService = {
 
   generateVideoScript: async (campaignId) => {
     const response = await apiClient.post('/api/creative/video-script', { campaign_id: Number(campaignId) });
+    return response.data;
+  },
+
+  startVideoRender: async (campaignId, creativeId) => {
+    const response = await apiClient.post('/api/creative/video/render', {
+      campaign_id: Number(campaignId),
+      creative_id: Number(creativeId),
+    });
+    return response.data;
+  },
+
+  getVideoRenderStatus: async (campaignId, creativeId) => {
+    const response = await apiClient.get(`/api/creative/campaign/${campaignId}/video/${creativeId}/status`);
+    return response.data;
+  },
+
+  getRenderedVideo: async (campaignId, creativeId, videoUrl) => {
+    const response = await apiClient.get(
+      getRenderedVideoPath(campaignId, creativeId, videoUrl),
+      { responseType: 'blob', timeout: 120000 },
+    );
     return response.data;
   },
 

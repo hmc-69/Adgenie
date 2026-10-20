@@ -52,6 +52,12 @@ def ensure_creative_image_columns():
         "image_style": "VARCHAR(50) NULL",
         "image_resolution": "VARCHAR(20) NULL",
         "generated_at": "DATETIME NULL",
+        "video_project_id": "VARCHAR(100) NULL",
+        "video_status": "VARCHAR(30) NULL",
+        "video_path": "VARCHAR(500) NULL",
+        "video_content_type": "VARCHAR(50) NULL",
+        "video_duration": "DOUBLE NULL",
+        "video_result_url": "VARCHAR(1000) NULL",
     }
 
     inspector = inspect(engine)

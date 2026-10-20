@@ -30,13 +30,14 @@ class GeminiCreativeProvider(BaseCreativeProvider):
         self,
         prompt: str,
         response_schema: Type[ModelT],
+        api_response_schema: Any | None = None,
     ) -> Dict[str, Any]:
         response = self.client.models.generate_content(
             model=self.model,
             contents=prompt,
             config=types.GenerateContentConfig(
                 response_mime_type="application/json",
-                response_schema=response_schema,
+                response_schema=api_response_schema or response_schema,
                 automatic_function_calling=types.AutomaticFunctionCallingConfig(
                     disable=True
                 ),
@@ -49,6 +50,31 @@ class GeminiCreativeProvider(BaseCreativeProvider):
             return response_schema.model_validate(parsed).model_dump()
         except (TypeError, ValidationError) as exc:
             raise ValueError("Gemini returned invalid structured content") from exc
+
+    @staticmethod
+    def _video_response_schema() -> Dict[str, Any]:
+        scene_schema = {
+            "type": "OBJECT",
+            "properties": {
+                "scene_number": {"type": "INTEGER"},
+                "duration": {"type": "NUMBER"},
+                "visual": {"type": "STRING"},
+                "visual_description": {"type": "STRING"},
+                "voiceover": {"type": "STRING"},
+                "on_screen_text": {"type": "STRING"},
+            },
+            "required": ["scene_number", "duration", "visual", "visual_description", "voiceover", "on_screen_text"],
+        }
+        return {
+            "type": "OBJECT",
+            "properties": {
+                "title": {"type": "STRING"},
+                "duration": {"type": "NUMBER"},
+                "scenes": {"type": "ARRAY", "items": scene_schema},
+                "final_cta": {"type": "STRING"},
+            },
+            "required": ["title", "duration", "scenes", "final_cta"],
+        }
 
     def generate_image_brief(self, campaign: Dict[str, Any]) -> Dict[str, Any]:
         prompt = f"""
@@ -68,7 +94,8 @@ attempt to generate the image itself.
 
     def generate_video_script(self, campaign: Dict[str, Any]) -> Dict[str, Any]:
         prompt = f"""
-You are a marketing video scriptwriter. Generate a short promotional video script using only
+You are a concise marketing video scriptwriter. Generate a promotional video script of 15 seconds
+or less using only
 this campaign information:
 {campaign}
 
@@ -76,10 +103,45 @@ Match the target audience, campaign objective, platform, and campaign tone. High
 actual product benefits provided. Avoid invented claims. Start with a strong opening hook,
 communicate the product value proposition, and end with a clear call to action.
 
-Generate multiple scenes for a future AI video-generation system. Each scene must include a scene
-number, duration, visual direction, voiceover, and on-screen text. Do not generate the actual video.
+Generate 2 to 4 scenes for a future AI video-generation system. Use numeric duration values in
+seconds (not ranges or strings). The scene durations must add up to exactly the top-level duration
+and never exceed 15 seconds. Keep voiceovers short enough to be spoken within their scene timing,
+provide a concise visual_description for each scene describing a photograph to search for (include
+the subject, setting, and useful visual details). The visual_description is metadata only and must
+never be used as on-screen text. Preserve the scene's visual direction, narration, and caption;
+avoid excessive on-screen text, and include a short, clear call to action in the final scene's
+voiceover and on-screen text. The top-level duration must be the numeric sum of all scene durations.
+Do not generate the actual video.
 """.strip()
-        return self._generate_structured(prompt, VideoCreativeScript)
+        try:
+            return self._generate_structured(
+                prompt,
+                VideoCreativeScript,
+                self._video_response_schema(),
+            )
+        except ValueError as exc:
+            retry_prompt = f"""
+The previous video script was invalid. Regenerate it strictly as a concise advertising script
+using only this campaign information:
+{campaign}
+
+Return exactly 2 to 4 scenes. Every scene duration must be a positive number of seconds. The
+top-level duration must equal the sum of all scene durations and that sum must be no greater than
+15 seconds. Include a concise photo-search visual_description in every scene; do not put it on
+screen. Keep every voiceover brief enough for its scene, use minimal on-screen text, and put a
+short call to action in the final scene's voiceover and on-screen text. Return JSON matching the
+requested schema only.
+""".strip()
+            try:
+                return self._generate_structured(
+                    retry_prompt,
+                    VideoCreativeScript,
+                    self._video_response_schema(),
+                )
+            except ValueError as retry_exc:
+                raise ValueError(
+                    "Gemini returned a video script exceeding the 15-second limit or with invalid scene durations"
+                ) from retry_exc
 
     def generate_advertisement_image(
         self,

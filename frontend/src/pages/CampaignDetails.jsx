@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams, useLocation } from 'react-router-dom';
 import { campaignService, getApiErrorMessage } from '../api/campaignService';
 import { creativeService } from '../api/creativeService';
+import { createVideoPlaybackUrl, isTerminalVideoStatus } from '../utils/videoPlayback';
 import { CampaignStatusBadge } from '../components/CampaignStatusBadge';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { CreativeList } from '../components/CreativeList';
@@ -58,6 +59,10 @@ export const CampaignDetails = () => {
   const generatedImageUrlRef = useRef(null);
   const selectedCreativeIdRef = useRef(null);
   const imageRequestInFlightRef = useRef(false);
+  const videoUrlRef = useRef(null);
+  const videoPollRef = useRef(null);
+  const [videoRender, setVideoRender] = useState(null);
+  const [isStartingVideoRender, setIsStartingVideoRender] = useState(false);
 
   const setImagePreview = (image, blob) => {
     if (generatedImageUrlRef.current) {
@@ -80,7 +85,62 @@ export const CampaignDetails = () => {
     if (generatedImageUrlRef.current) {
       URL.revokeObjectURL(generatedImageUrlRef.current);
     }
+    if (videoUrlRef.current) URL.revokeObjectURL(videoUrlRef.current);
+    if (videoPollRef.current) window.clearInterval(videoPollRef.current);
   }, []);
+
+  const loadRenderedVideo = async (creativeId, videoUrl) => {
+    const blob = await creativeService.getRenderedVideo(campaign.id, creativeId, videoUrl);
+    if (videoUrlRef.current) URL.revokeObjectURL(videoUrlRef.current);
+    videoUrlRef.current = createVideoPlaybackUrl(blob);
+    setVideoRender((previous) => ({ ...previous, status: 'completed', videoUrl: videoUrlRef.current }));
+  };
+
+  const pollVideoRender = (creativeId) => {
+    if (videoPollRef.current) window.clearInterval(videoPollRef.current);
+    videoPollRef.current = window.setInterval(async () => {
+      try {
+        const statusResponse = await creativeService.getVideoRenderStatus(campaign.id, creativeId);
+        setVideoRender(statusResponse);
+        if (statusResponse.status === 'completed') {
+          window.clearInterval(videoPollRef.current);
+          videoPollRef.current = null;
+          if (!statusResponse.video_url) {
+            throw new Error('The video completed, but the API returned no playback URL.');
+          }
+          await loadRenderedVideo(creativeId, statusResponse.video_url);
+          await loadSavedCreatives();
+        } else if (isTerminalVideoStatus(statusResponse.status)) {
+          window.clearInterval(videoPollRef.current);
+          videoPollRef.current = null;
+        }
+      } catch (error) {
+        window.clearInterval(videoPollRef.current);
+        videoPollRef.current = null;
+        setVideoRender((previous) => previous ? { ...previous, status: 'failed' } : previous);
+        setCreativeError(getApiErrorMessage(error, 'Unable to check video render status.'));
+      }
+    }, 5000);
+  };
+
+  const handleStartVideoRender = async () => {
+    if (isStartingVideoRender || !selectedCreativeIdRef.current) {
+      setCreativeError('Save the video script before rendering it.');
+      return;
+    }
+    if (!window.confirm('Generate this video? JSON2Video rendering consumes credits.')) return;
+    setIsStartingVideoRender(true);
+    setCreativeError('');
+    try {
+      const response = await creativeService.startVideoRender(campaign.id, selectedCreativeIdRef.current);
+      setVideoRender(response);
+      pollVideoRender(selectedCreativeIdRef.current);
+    } catch (error) {
+      setCreativeError(getApiErrorMessage(error, 'Unable to start video rendering.'));
+    } finally {
+      setIsStartingVideoRender(false);
+    }
+  };
 
   const loadSavedCreatives = async () => {
     if (!id) return;
@@ -275,12 +335,22 @@ export const CampaignDetails = () => {
     link.click();
   };
 
+  const handleDownloadRenderedVideo = () => {
+    if (!videoUrlRef.current) return;
+    const link = document.createElement('a');
+    link.href = videoUrlRef.current;
+    link.download = `adgenie-campaign-${campaign.id}-video.mp4`;
+    link.click();
+  };
+
   const handleOpenCreative = async (creative) => {
     setCreativeType(creative.type);
     setCreativeContent(creative.generated_content || {});
     setCreativeError('');
     selectedCreativeIdRef.current = creative.id;
+    setLastSavedCreative(creative);
     clearImagePreview();
+    setVideoRender(null);
 
     if (creative.type === 'image' && creative.image_url) {
       try {
@@ -293,6 +363,25 @@ export const CampaignDetails = () => {
         }, imageBlob);
       } catch (error) {
         setCreativeError(getApiErrorMessage(error, 'Unable to load the saved advertisement image.'));
+      }
+    }
+    if (creative.type === 'video' && creative.video_project_id) {
+      setVideoRender({
+        campaign_id: campaign.id,
+        creative_id: creative.id,
+        project_id: creative.video_project_id,
+        status: creative.video_status || 'submitted',
+        duration: creative.video_duration,
+      });
+      if (creative.video_status === 'completed') {
+        try {
+          await loadRenderedVideo(creative.id, creative.video_url);
+        } catch (error) {
+          setVideoRender((previous) => previous ? { ...previous, status: 'failed' } : previous);
+          setCreativeError(getApiErrorMessage(error, 'Unable to load the rendered video.'));
+        }
+      } else {
+        pollVideoRender(creative.id);
       }
     }
   };
@@ -421,6 +510,10 @@ export const CampaignDetails = () => {
             onGenerateImage={handleGenerateAdvertisementImage}
             onSaveImage={handleSaveGeneratedImage}
             onDownloadImage={handleDownloadGeneratedImage}
+            videoRender={videoRender}
+            isStartingVideoRender={isStartingVideoRender}
+            onStartVideoRender={handleStartVideoRender}
+            onDownloadVideo={handleDownloadRenderedVideo}
           />
         )}
       </section>

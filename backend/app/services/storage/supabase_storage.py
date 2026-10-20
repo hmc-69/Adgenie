@@ -16,6 +16,7 @@ IMAGE_EXTENSIONS = {
     "image/png": ".png",
     "image/webp": ".webp",
 }
+VIDEO_CONTENT_TYPE = "video/mp4"
 
 
 class SupabaseStorageError(RuntimeError):
@@ -103,6 +104,39 @@ class SupabaseStorageService:
             if "not found" in str(exc).lower() or "404" in str(exc):
                 raise SupabaseStorageNotFoundError("Stored image does not exist") from exc
             raise SupabaseStorageError("Supabase image retrieval failed") from exc
+
+    def upload_video(self, video_bytes: bytes, campaign_id: int, creative_id: int) -> str:
+        storage_path = (
+            f"campaigns/{campaign_id}/creatives/{creative_id}/"
+            f"{uuid.uuid4().hex}.mp4"
+        )
+        try:
+            self._get_client().storage.from_(settings.SUPABASE_STORAGE_BUCKET).upload(
+                storage_path,
+                video_bytes,
+                file_options={
+                    "content-type": VIDEO_CONTENT_TYPE,
+                    "cache-control": "private,max-age=31536000",
+                    "upsert": False,
+                },
+            )
+            return storage_path
+        except SupabaseStorageError:
+            raise
+        except Exception as exc:
+            raise SupabaseStorageError("Supabase video upload failed") from exc
+
+    def download_video(self, storage_path: str) -> bytes:
+        try:
+            return self._get_client().storage.from_(
+                settings.SUPABASE_STORAGE_BUCKET
+            ).download(storage_path)
+        except SupabaseStorageError:
+            raise
+        except Exception as exc:
+            if "not found" in str(exc).lower() or "404" in str(exc):
+                raise SupabaseStorageNotFoundError("Stored video does not exist") from exc
+            raise SupabaseStorageError("Supabase video retrieval failed") from exc
 
     def delete_image(self, storage_path: str) -> None:
         try:

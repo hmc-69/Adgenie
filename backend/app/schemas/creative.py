@@ -2,7 +2,12 @@ from datetime import datetime
 from enum import Enum
 from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+
+
+MAX_VIDEO_DURATION_SECONDS = 15
+MIN_VIDEO_SCENES = 2
+MAX_VIDEO_SCENES = 4
 
 
 class CreativeType(str, Enum):
@@ -26,6 +31,12 @@ class CreativeSaveRequest(BaseModel):
             raise ValueError("Creative content cannot be empty")
         return value
 
+    @model_validator(mode="after")
+    def validate_video_content(self) -> "CreativeSaveRequest":
+        if self.type == CreativeType.VIDEO:
+            VideoCreativeScript.model_validate(self.content)
+        return self
+
 
 class ImageCreativeBrief(BaseModel):
     headline: str
@@ -37,18 +48,47 @@ class ImageCreativeBrief(BaseModel):
 
 
 class VideoScene(BaseModel):
-    scene_number: int
-    duration: str
-    visual: str
-    voiceover: str
-    on_screen_text: str
+    scene_number: int = Field(..., ge=1)
+    duration: float = Field(..., ge=0, description="Scene duration in seconds")
+    visual: str = Field(..., min_length=1)
+    visual_description: Optional[str] = Field(default=None, min_length=1)
+    voiceover: str = Field(..., min_length=1)
+    on_screen_text: str = Field(..., min_length=1)
+
+    @field_validator("duration")
+    @classmethod
+    def validate_duration(cls, value: float) -> float:
+        if value <= 0:
+            raise ValueError("Scene duration must be greater than zero")
+        return value
 
 
 class VideoCreativeScript(BaseModel):
-    title: str
-    duration: str
-    scenes: List[VideoScene]
-    final_cta: str
+    title: str = Field(..., min_length=1)
+    duration: float = Field(..., ge=0, le=MAX_VIDEO_DURATION_SECONDS)
+    scenes: List[VideoScene] = Field(..., min_length=MIN_VIDEO_SCENES, max_length=MAX_VIDEO_SCENES)
+    final_cta: str = Field(..., min_length=1)
+
+    @field_validator("duration")
+    @classmethod
+    def validate_duration_value(cls, value: float) -> float:
+        if value <= 0:
+            raise ValueError("Video duration must be greater than zero")
+        return value
+
+    @model_validator(mode="after")
+    def validate_duration(self) -> "VideoCreativeScript":
+        scene_duration = sum(scene.duration for scene in self.scenes)
+        if scene_duration > MAX_VIDEO_DURATION_SECONDS:
+            raise ValueError(
+                f"Video scene durations total {scene_duration:g} seconds; "
+                f"maximum is {MAX_VIDEO_DURATION_SECONDS} seconds"
+            )
+        if abs(self.duration - scene_duration) > 0.01:
+            raise ValueError("Video duration must equal the sum of scene durations")
+        if self.scenes[-1].on_screen_text.strip().lower() != self.final_cta.strip().lower():
+            raise ValueError("The final scene must include the final call to action as on-screen text")
+        return self
 
 
 class CreativeGenerationResponse(BaseModel):
@@ -134,6 +174,10 @@ class CreativeRecordResponse(BaseModel):
     image_aspect_ratio: Optional[str] = None
     image_style: Optional[str] = None
     image_resolution: Optional[str] = None
+    video_project_id: Optional[str] = None
+    video_status: Optional[str] = None
+    video_duration: Optional[float] = None
+    video_url: Optional[str] = None
     generated_at: Optional[datetime] = None
     created_at: datetime
     updated_at: datetime

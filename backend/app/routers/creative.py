@@ -16,14 +16,18 @@ from app.schemas.creative import (
     ImageGenerationRequest,
     ImageGenerationResponse,
 )
+from app.schemas.video import VideoRenderRequest, VideoRenderResponse
 from app.services.creative_service import (
     create_creative_record,
     generate_ad_image_for_creative,
     generate_image_creative,
     generate_video_creative,
+    get_generated_video,
     get_generated_image,
     get_creative_for_campaign,
     list_creatives_for_campaign,
+    start_video_render,
+    update_video_render_status,
 )
 
 router = APIRouter(prefix="/api/creative", tags=["Creative"])
@@ -80,7 +84,16 @@ def list_creatives_endpoint(
 ):
     creatives = list_creatives_for_campaign(db=db, campaign_id=campaign_id, user_id=current_user.id)
     return CreativeListResponse(
-        creatives=[CreativeRecordResponse.model_validate(item) for item in creatives],
+        creatives=[
+            CreativeRecordResponse.model_validate(item).model_copy(update={
+                "video_url": (
+                    f"/api/creative/campaign/{item.campaign_id}/video/{item.id}"
+                    if item.type == CreativeType.VIDEO.value and item.video_path
+                    else None
+                ),
+            })
+            for item in creatives
+        ],
         total=len(creatives),
     )
 
@@ -140,6 +153,50 @@ def serve_generated_image(
         user_id=current_user.id,
     )
     return Response(content=image_bytes, media_type=content_type)
+
+
+@router.post(
+    "/video/render",
+    response_model=VideoRenderResponse,
+    status_code=status.HTTP_202_ACCEPTED,
+    summary="Start rendering a saved video script",
+)
+def start_video_render_endpoint(
+    payload: VideoRenderRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    return start_video_render(db, payload.campaign_id, payload.creative_id, current_user.id)
+
+
+@router.get(
+    "/campaign/{campaign_id}/video/{creative_id}/status",
+    response_model=VideoRenderResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Check a video render status",
+)
+def video_render_status_endpoint(
+    campaign_id: int,
+    creative_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    return update_video_render_status(db, campaign_id, creative_id, current_user.id)
+
+
+@router.get(
+    "/campaign/{campaign_id}/video/{creative_id}",
+    status_code=status.HTTP_200_OK,
+    summary="Retrieve a completed rendered video",
+)
+def serve_generated_video(
+    campaign_id: int,
+    creative_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    video_bytes, content_type = get_generated_video(db, campaign_id, creative_id, current_user.id)
+    return Response(content=video_bytes, media_type=content_type, headers={"Content-Disposition": "inline"})
 
 
 @router.post(

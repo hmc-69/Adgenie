@@ -22,6 +22,9 @@ class Settings:
     GEMINI_API_KEY: str | None = os.getenv("GEMINI_API_KEY")
     GEMINI_MODEL: str = os.getenv("GEMINI_MODEL", "gemini-3.1-flash-lite")
     GEMINI_IMAGE_MODEL: str = os.getenv("GEMINI_IMAGE_MODEL", "gemini-2.5-flash-image")
+    JSON2VIDEO_API_KEY: str | None = os.getenv("JSON2VIDEO_API_KEY")
+    JSON2VIDEO_API_URL: str = "https://api.json2video.com/v2"
+    PEXELS_API_KEY: str | None = os.getenv("PEXELS_API_KEY")
     SUPABASE_URL: str | None = os.getenv("SUPABASE_URL")
     SUPABASE_SERVICE_ROLE_KEY: str | None = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
     SUPABASE_STORAGE_BUCKET: str = os.getenv("SUPABASE_STORAGE_BUCKET", "adgenie-images")

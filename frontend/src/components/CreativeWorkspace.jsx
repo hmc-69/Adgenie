@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 
+const MAX_VIDEO_DURATION_SECONDS = 15;
+
 const emptyImage = {
   headline: '',
   primary_text: '',
@@ -11,11 +13,18 @@ const emptyImage = {
 
 const emptyVideo = {
   title: '',
-  duration: '30 seconds',
+  duration: 15,
   scenes: [
     {
       scene_number: 1,
-      duration: '0-5 seconds',
+      duration: 7,
+      visual: '',
+      voiceover: '',
+      on_screen_text: '',
+    },
+    {
+      scene_number: 2,
+      duration: 8,
       visual: '',
       voiceover: '',
       on_screen_text: '',
@@ -51,9 +60,17 @@ export const CreativeWorkspace = ({
   onGenerateImage,
   onSaveImage,
   onDownloadImage,
+  videoRender,
+  isStartingVideoRender,
+  onStartVideoRender,
+  onDownloadVideo,
 }) => {
   const [localImage, setLocalImage] = useState(emptyImage);
   const [localVideo, setLocalVideo] = useState(emptyVideo);
+  const videoTotalDuration = useMemo(
+    () => localVideo.scenes.reduce((total, scene) => total + (Number(scene.duration) || 0), 0),
+    [localVideo.scenes],
+  );
 
   const hasGenerated = useMemo(() => {
     if (!generatedContent) return false;
@@ -79,11 +96,11 @@ export const CreativeWorkspace = ({
     if (type === 'video') {
       setLocalVideo({
         title: generatedContent.title || '',
-        duration: generatedContent.duration || '30 seconds',
+        duration: generatedContent.duration || 0,
         scenes: Array.isArray(generatedContent.scenes) && generatedContent.scenes.length
           ? generatedContent.scenes.map((scene) => ({
               scene_number: scene.scene_number || 1,
-              duration: scene.duration || '0-5 seconds',
+              duration: scene.duration || 0,
               visual: scene.visual || '',
               voiceover: scene.voiceover || '',
               on_screen_text: scene.on_screen_text || '',
@@ -109,18 +126,20 @@ export const CreativeWorkspace = ({
       ...localVideo,
       scenes: localVideo.scenes.map((scene, index) => (index === sceneIndex ? { ...scene, [field]: value } : scene)),
     };
+    nextVideo.duration = nextVideo.scenes.reduce((total, scene) => total + (Number(scene.duration) || 0), 0);
     setLocalVideo(nextVideo);
     onContentChange({ ...generatedContent, ...nextVideo });
   };
 
   const handleVideoAddScene = () => {
+    if (localVideo.scenes.length >= 4) return;
     const nextVideo = {
       ...localVideo,
       scenes: [
         ...localVideo.scenes,
         {
           scene_number: localVideo.scenes.length + 1,
-          duration: '0-5 seconds',
+          duration: 1,
           visual: '',
           voiceover: '',
           on_screen_text: '',
@@ -253,6 +272,14 @@ export const CreativeWorkspace = ({
           <button type="button" className="btn-primary-sm" onClick={onSave} disabled={isGenerating || !hasGenerated}>
             Save Script
           </button>
+          <button
+            type="button"
+            className="btn-primary-sm"
+            onClick={onStartVideoRender}
+            disabled={isGenerating || isStartingVideoRender || !savedCreative}
+          >
+            {isStartingVideoRender ? 'Submitting...' : 'Generate Video'}
+          </button>
         </div>
       </div>
 
@@ -265,10 +292,11 @@ export const CreativeWorkspace = ({
           <input className="form-input form-input-plain" value={localVideo.title} onChange={(event) => handleVideoFieldChange('title', event.target.value)} />
         </div>
         <div className="form-group">
-          <label className="form-label">Duration</label>
-          <input className="form-input form-input-plain" value={localVideo.duration} onChange={(event) => handleVideoFieldChange('duration', event.target.value)} />
+          <label className="form-label">Total Duration (max 15 seconds)</label>
+          <input className="form-input form-input-plain" type="number" min="0" max={MAX_VIDEO_DURATION_SECONDS} step="0.1" value={videoTotalDuration} readOnly />
         </div>
       </div>
+      <p className="form-help">Maximum video duration: {MAX_VIDEO_DURATION_SECONDS} seconds. Calculated total: {videoTotalDuration} seconds.</p>
 
       {localVideo.scenes.map((scene, index) => (
         <div key={scene.scene_number || index} className="video-scene-card">
@@ -276,7 +304,7 @@ export const CreativeWorkspace = ({
           <div className="creative-form-grid">
             <div className="form-group">
               <label className="form-label">Duration</label>
-              <input className="form-input form-input-plain" value={scene.duration} onChange={(event) => handleSceneChange(index, 'duration', event.target.value)} />
+              <input className="form-input form-input-plain" type="number" min="0.1" max={MAX_VIDEO_DURATION_SECONDS} step="0.1" value={scene.duration} onChange={(event) => handleSceneChange(index, 'duration', Number(event.target.value))} />
             </div>
             <div className="form-group">
               <label className="form-label">On-screen Text</label>
@@ -294,12 +322,31 @@ export const CreativeWorkspace = ({
         </div>
       ))}
 
-      <button type="button" className="btn-secondary" onClick={handleVideoAddScene}>Add Scene</button>
+      <button type="button" className="btn-secondary" onClick={handleVideoAddScene} disabled={localVideo.scenes.length >= 4}>Add Scene</button>
 
       <div className="form-group form-span-2">
         <label className="form-label">Final CTA</label>
         <input className="form-input form-input-plain" value={localVideo.final_cta} onChange={(event) => handleVideoFieldChange('final_cta', event.target.value)} />
       </div>
+      {videoRender && (
+        <div className="creative-output-panel">
+          <strong>Video render: {videoRender.status}</strong>
+          {videoRender.status === 'failed' ? (
+            <p className="alert alert-error">{videoRender.error || 'The video is unavailable. See the error details above.'} No automatic retry was submitted.</p>
+          ) : null}
+          {videoRender.status === 'submitted' || videoRender.status === 'pending' || videoRender.status === 'rendering' || videoRender.status === 'running' ? (
+            <p>{videoRender.status === 'pending' || videoRender.status === 'submitted' ? 'Video render is queued.' : 'Video render is in progress.'} JSON2Video credits are being used.</p>
+          ) : null}
+          {videoRender.videoUrl ? (
+            <>
+              <video controls className="generated-video" src={videoRender.videoUrl}>
+                <track kind="captions" />
+              </video>
+              <button type="button" className="btn-secondary" onClick={onDownloadVideo}>Download Video</button>
+            </>
+          ) : null}
+        </div>
+      )}
     </div>
   );
 };

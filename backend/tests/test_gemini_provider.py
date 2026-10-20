@@ -93,17 +93,26 @@ class GeminiProviderTests(unittest.TestCase):
     def test_structured_video_response_is_validated(self):
         parsed = VideoCreativeScript(
             title="Wireless Earbuds for Every Day",
-            duration="30 seconds",
+            duration=15,
             scenes=[
                 {
                     "scene_number": 1,
-                    "duration": "0-5 seconds",
+                    "duration": 7,
                     "visual": "A student starts a commute.",
+                    "visual_description": "Landscape photo of a student wearing earbuds on a city commute.",
                     "voiceover": "Bring your sound with you.",
                     "on_screen_text": "Sound on.",
+                },
+                {
+                    "scene_number": 2,
+                    "duration": 8,
+                    "visual": "Product close-up and final brand card.",
+                    "visual_description": "Landscape close-up of wireless earbuds on a clean desk.",
+                    "voiceover": "Shop now for better everyday sound.",
+                    "on_screen_text": "Shop Now",
                 }
             ],
-            final_cta="Learn More",
+            final_cta="Shop Now",
         )
         response = Mock(parsed=parsed)
         with patch.object(settings, "GEMINI_API_KEY", "test-key"), patch(
@@ -114,9 +123,44 @@ class GeminiProviderTests(unittest.TestCase):
 
         self.assertEqual(result, parsed.model_dump())
         self.assertIs(
-            client.return_value.models.generate_content.call_args.kwargs["config"].response_schema,
-            VideoCreativeScript,
+            client.return_value.models.generate_content.call_args.kwargs["config"].response_schema["type"],
+            "OBJECT",
         )
+
+    def test_invalid_gemini_video_response_is_retried_and_rejected(self):
+        invalid = Mock(
+            parsed={
+                "title": "Too long",
+                "duration": 16,
+                "scenes": [
+                    {
+                        "scene_number": 1,
+                        "duration": 8,
+                        "visual": "Product shot",
+                        "visual_description": "Landscape photo of product use.",
+                        "voiceover": "Too long.",
+                        "on_screen_text": "Product",
+                    },
+                    {
+                        "scene_number": 2,
+                        "duration": 8,
+                        "visual": "CTA shot",
+                        "visual_description": "Landscape product photo with open space for caption.",
+                        "voiceover": "Buy now.",
+                        "on_screen_text": "Buy Now",
+                    },
+                ],
+                "final_cta": "Buy Now",
+            }
+        )
+        with patch.object(settings, "GEMINI_API_KEY", "test-key"), patch(
+            "app.services.creative.providers.gemini_provider.genai.Client"
+        ) as client:
+            client.return_value.models.generate_content.return_value = invalid
+            with self.assertRaisesRegex(ValueError, "15-second limit"):
+                GeminiCreativeProvider().generate_video_script(self.campaign)
+
+        self.assertEqual(client.return_value.models.generate_content.call_count, 2)
 
     def test_creative_routes_require_authentication_dependency(self):
         protected_paths = {

@@ -6,6 +6,7 @@ from typing import Any, Dict
 from google.genai.errors import ServerError
 
 from app.core.config import settings
+from app.schemas.creative import VideoCreativeScript
 from app.services.creative.providers.gemini_provider import GeminiCreativeProvider
 from app.services.creative.providers.cloudflare_image_provider import CloudflareImageProvider
 from app.services.creative.providers.mock_provider import MockCreativeProvider
@@ -127,7 +128,8 @@ def generate_image_brief(campaign: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def generate_video_script(campaign: Dict[str, Any]) -> Dict[str, Any]:
-    return get_provider().generate_video_script(campaign)
+    result = get_provider().generate_video_script(campaign)
+    return VideoCreativeScript.model_validate(result).model_dump()
 
 
 def get_supported_image_resolutions(model_name: str | None = None) -> list[str]:

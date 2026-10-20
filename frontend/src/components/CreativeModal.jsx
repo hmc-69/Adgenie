@@ -15,7 +15,7 @@ export const CreativeModal = ({ open, onClose, onSelectType }) => {
         type: 'video',
         emoji: '🎬',
         title: 'Video Ad',
-        description: 'Create an editable, scene-by-scene video advertisement script.',
+        description: 'Create an editable, scene-by-scene video advertisement script up to 15 seconds.',
       },
     ],
     []

@@ -64,29 +64,33 @@ class MockCreativeProvider(BaseCreativeProvider):
         scenes = [
             {
                 "scene_number": 1,
-                "duration": "0-5 seconds",
+                "duration": 4,
                 "visual": f"A quick lifestyle shot of {audience.lower()} engaging with {product_name.lower()} in a dynamic {platform.lower()} environment.",
+                "visual_description": f"Landscape photo of {audience.lower()} using {product_name.lower()} in a lively everyday {platform.lower()} setting.",
                 "voiceover": f"Meet {product_name}, built to fit seamlessly into everyday life.",
                 "on_screen_text": product_name,
             },
             {
                 "scene_number": 2,
-                "duration": "5-12 seconds",
+                "duration": 6,
                 "visual": f"Close-up product detail shot with clean lighting and a polished brand aesthetic.",
+                "visual_description": f"Landscape close-up photo of {product_name.lower()} with clean natural lighting and a polished product setting.",
                 "voiceover": f"{description} Designed for {audience.lower()} who want quality without compromise.",
                 "on_screen_text": "Built for You",
             },
             {
                 "scene_number": 3,
-                "duration": "12-22 seconds",
+                "duration": 3,
                 "visual": f"Real-life usage moments showing the product in motion across work, travel, or leisure.",
+                "visual_description": f"Landscape lifestyle photo of {audience.lower()} using {product_name.lower()} during work, travel, or leisure.",
                 "voiceover": f"From first use to everyday moments, {product_name} keeps the experience simple, fast, and {tone.lower()}.",
                 "on_screen_text": "Simple. Powerful. Ready.",
             },
             {
                 "scene_number": 4,
-                "duration": "22-30 seconds",
+                "duration": 2,
                 "visual": f"Final branded close-up with a clean CTA overlay and confident call-to-action framing.",
+                "visual_description": f"Landscape photo of {product_name.lower()} arranged in a clean, premium setting with open space for a caption.",
                 "voiceover": f"Choose {product_name} and make every moment feel better.",
                 "on_screen_text": cta,
             },
@@ -94,7 +98,7 @@ class MockCreativeProvider(BaseCreativeProvider):
 
         return {
             "title": f"{product_name} — {objective} Campaign",
-            "duration": "30 seconds",
+            "duration": 15,
             "scenes": scenes,
             "final_cta": cta,
         }
