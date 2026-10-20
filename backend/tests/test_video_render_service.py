@@ -1,9 +1,11 @@
 import unittest
+from types import SimpleNamespace
 from unittest.mock import Mock, patch
 
 from fastapi import HTTPException
 
 from app.services.creative_service import start_video_render, update_video_render_status
+from app.services.creative.providers.cloudflare_image_provider import CloudflareImageProviderError, GeneratedImage
 from app.services.storage.supabase_storage import SupabaseStorageError
 
 
@@ -11,8 +13,8 @@ SCRIPT = {
     "title": "Launch",
     "duration": 15,
     "scenes": [
-        {"scene_number": 1, "duration": 7, "visual": "Opening", "voiceover": "Meet it.", "on_screen_text": "Meet it"},
-        {"scene_number": 2, "duration": 8, "visual": "Close", "voiceover": "Try it.", "on_screen_text": "Try Now"},
+        {"scene_number": 1, "duration": 7, "visual": "Opening", "visual_prompt": "A student listens to earbuds on a train platform", "voiceover": "Meet it.", "on_screen_text": "Meet it"},
+        {"scene_number": 2, "duration": 8, "visual": "Close", "visual_prompt": "Earbuds on a clean desk in daylight", "voiceover": "Try it.", "on_screen_text": "Try Now"},
     ],
     "final_cta": "Try Now",
 }
@@ -21,7 +23,11 @@ SCRIPT = {
 class VideoRenderServiceTests(unittest.TestCase):
     def setUp(self):
         self.db = Mock()
-        self.db.query.return_value.filter.return_value.all.return_value = []
+        self.campaign = SimpleNamespace(
+            id=7, name="Launch", product_name="Earbuds", description="Wireless audio",
+            target_audience="Students", platform="Instagram", objective="Promotion", tone="Bright",
+            keywords="wireless, commute",
+        )
         self.creative = Mock(
             type="video",
             video_project_id=None,
@@ -32,97 +38,65 @@ class VideoRenderServiceTests(unittest.TestCase):
             generated_content=SCRIPT,
         )
 
-    @patch("app.services.creative_service._get_owned_video_creative")
-    @patch("app.services.creative_service.PexelsImageSearch")
-    @patch("app.services.creative_service.JSON2VideoProvider")
-    def test_start_stores_project_id(self, provider_class, search_class, get_creative):
-        get_creative.return_value = self.creative
-        search_class.return_value.search.side_effect = [
-            {"image_url": "https://images.example/one.jpg"},
-            {"image_url": "https://images.example/two.jpg"},
+    def test_start_generates_uploads_signs_and_submits_scene_images(self):
+        image_provider = Mock()
+        image_provider.generate_image.side_effect = [
+            GeneratedImage(b"jpeg-scene", "image/jpeg"),
+            GeneratedImage(b"webp-scene", "image/webp"),
         ]
-        provider_class.return_value.create_movie.return_value = {
-            "project_id": "project-1",
-            "status": "submitted",
-        }
-
-        result = start_video_render(self.db, 7, 9, 3)
+        storage = Mock()
+        storage.upload_video_scene_image.side_effect = [
+            "campaigns/7/video-scenes/9/scene-1-a.jpg",
+            "campaigns/7/video-scenes/9/scene-2-b.webp",
+        ]
+        storage.create_signed_image_url.side_effect = [
+            "https://storage.example/scene-1.jpg?token=signed-one",
+            "https://storage.example/scene-2.webp?token=signed-two",
+        ]
+        json2video = Mock()
+        json2video.create_movie.return_value = {"project_id": "project-1", "status": "submitted"}
+        with patch("app.services.creative_service._get_owned_video_creative", return_value=self.creative), \
+             patch("app.services.creative_service.get_owned_campaign", return_value=self.campaign), \
+             patch("app.services.creative_service.get_image_provider", return_value=image_provider), \
+             patch("app.services.creative_service.get_supabase_storage_service", return_value=storage), \
+             patch("app.services.creative_service.JSON2VideoProvider", return_value=json2video):
+            result = start_video_render(self.db, 7, 9, 3)
 
         self.assertEqual(result["project_id"], "project-1")
         self.assertEqual(self.creative.video_duration, 15)
-        self.db.commit.assert_called_once()
-
-    @patch("app.services.creative_service.get_owned_campaign")
-    @patch("app.services.creative_service.PexelsImageSearch")
-    @patch("app.services.creative_service._get_owned_video_creative")
-    @patch("app.services.creative_service.JSON2VideoProvider")
-    def test_scene_search_retries_with_simple_query_and_maps_assets_by_scene(
-        self, provider_class, get_creative, search_class, get_campaign
-    ):
-        get_creative.return_value = self.creative
-        get_campaign.return_value = Mock(
-            name="Launch", product_name="Earbuds", description="Audio", target_audience="Students",
-            platform="Instagram", objective="Promotion", tone="Bright", keywords="wireless, commute",
+        self.assertEqual(image_provider.generate_image.call_count, 2)
+        first_prompt = image_provider.generate_image.call_args_list[0].args[0]
+        self.assertIn("student listens to earbuds on a train platform", first_prompt)
+        self.assertIn("Earbuds", first_prompt)
+        self.assertNotIn("Meet it.", first_prompt)
+        self.assertEqual(image_provider.generate_image.call_args_list[0].kwargs["aspect_ratio"], "16:9")
+        self.assertEqual(storage.upload_video_scene_image.call_args_list[1].kwargs["content_type"], "image/webp")
+        self.assertEqual(storage.create_signed_image_url.call_args_list[0].kwargs["expires_in"], 21600)
+        submitted_assets = json2video.create_movie.call_args.kwargs["scene_assets"]
+        self.assertEqual(
+            [asset["image_url"] for asset in submitted_assets],
+            ["https://storage.example/scene-1.jpg?token=signed-one", "https://storage.example/scene-2.webp?token=signed-two"],
         )
-        first_asset = {"image_url": "https://images.example/one.jpg", "source_url": "https://pexels.com/one", "photographer": "A"}
-        second_asset = {"image_url": "https://images.example/two.png", "source_url": "https://pexels.com/two", "photographer": "B"}
-        search_class.return_value.search.side_effect = [None, first_asset, second_asset]
-        provider_class.return_value.create_movie.return_value = {"project_id": "project-assets", "status": "submitted"}
+        persisted_assets = self.creative.generated_content["scene_assets"]
+        self.assertEqual(persisted_assets[0]["storage_path"], "campaigns/7/video-scenes/9/scene-1-a.jpg")
+        self.assertEqual(persisted_assets[1]["content_type"], "image/webp")
+        self.assertNotIn("image_url", persisted_assets[0])
+        self.assertNotIn("token=signed", str(persisted_assets))
+        self.assertEqual(self.db.commit.call_count, 2)
 
-        start_video_render(self.db, 7, 9, 3)
-
-        submitted = provider_class.return_value.create_movie.call_args.kwargs["scene_assets"]
-        self.assertEqual([asset["image_url"] for asset in submitted], [first_asset["image_url"], second_asset["image_url"]])
-        self.assertTrue(all(asset["fallback"] is None for asset in submitted))
-        self.assertEqual(self.creative.generated_content["scene_assets"], submitted)
-        self.assertEqual(search_class.return_value.search.call_count, 3)
-
-    @patch("app.services.creative_service.get_owned_campaign")
-    @patch("app.services.creative_service.PexelsImageSearch")
-    @patch("app.services.creative_service._get_owned_video_creative")
-    @patch("app.services.creative_service.JSON2VideoProvider")
-    def test_missing_scene_images_fail_before_json2video_submission(
-        self, provider_class, get_creative, search_class, get_campaign
-    ):
-        get_creative.return_value = self.creative
-        get_campaign.return_value = Mock(
-            name="Launch", product_name="Earbuds", description="Audio", target_audience="Students",
-            platform="Instagram", objective="Promotion", tone="Bright", keywords="wireless, commute",
-        )
-        search_class.return_value.search.return_value = None
-
-        with self.assertRaises(HTTPException) as raised:
-            start_video_render(self.db, 7, 9, 3)
+    def test_cloudflare_failure_stops_before_json2video_submission(self):
+        image_provider = Mock()
+        image_provider.generate_image.side_effect = CloudflareImageProviderError("worker unavailable")
+        with patch("app.services.creative_service._get_owned_video_creative", return_value=self.creative), \
+             patch("app.services.creative_service.get_owned_campaign", return_value=self.campaign), \
+             patch("app.services.creative_service.get_image_provider", return_value=image_provider), \
+             patch("app.services.creative_service.get_supabase_storage_service"), \
+             patch("app.services.creative_service.JSON2VideoProvider") as json2video:
+            with self.assertRaises(HTTPException) as raised:
+                start_video_render(self.db, 7, 9, 3)
 
         self.assertEqual(raised.exception.status_code, 502)
-        self.assertIn("publicly accessible images", raised.exception.detail)
-        self.assertEqual(search_class.return_value.search.call_count, 4)
-        provider_class.assert_not_called()
-
-    @patch("app.services.creative_service.get_owned_campaign")
-    @patch("app.services.creative_service.PexelsImageSearch")
-    @patch("app.services.creative_service._get_owned_video_creative")
-    @patch("app.services.creative_service.JSON2VideoProvider")
-    def test_malformed_image_url_is_retried_then_rejected_before_submission(
-        self, provider_class, get_creative, search_class, get_campaign
-    ):
-        get_creative.return_value = self.creative
-        get_campaign.return_value = Mock(
-            name="Launch", product_name="Earbuds", description="Audio", target_audience="Students",
-            platform="Instagram", objective="Promotion", tone="Bright", keywords="wireless, commute",
-        )
-        search_class.return_value.search.side_effect = [
-            {"image_url": "https://pexels.com/search/earbuds"},
-            {"image_url": "https://images.example/first.jpg"},
-            {"image_url": "https://images.example/second.jpg"},
-        ]
-        provider_class.return_value.create_movie.return_value = {"project_id": "project", "status": "submitted"}
-
-        start_video_render(self.db, 7, 9, 3)
-
-        assets = provider_class.return_value.create_movie.call_args.kwargs["scene_assets"]
-        self.assertEqual(assets[0]["image_url"], "https://images.example/first.jpg")
-        self.assertEqual(assets[1]["image_url"], "https://images.example/second.jpg")
+        json2video.assert_not_called()
 
     @patch("app.services.creative_service._get_owned_video_creative")
     @patch("app.services.creative_service.JSON2VideoProvider")

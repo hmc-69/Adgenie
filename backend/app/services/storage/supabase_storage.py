@@ -93,6 +93,60 @@ class SupabaseStorageService:
         except Exception as exc:
             raise SupabaseStorageError("Supabase image upload failed") from exc
 
+    def upload_video_scene_image(
+        self,
+        image_bytes: bytes,
+        content_type: str,
+        campaign_id: int,
+        creative_id: int,
+        scene_number: int,
+    ) -> str:
+        extension = IMAGE_EXTENSIONS.get(content_type)
+        if extension is None:
+            raise SupabaseStorageError("Unsupported generated scene image format")
+        if not image_bytes or scene_number < 1:
+            raise SupabaseStorageError("Generated scene image is invalid")
+        storage_path = (
+            f"campaigns/{campaign_id}/video-scenes/{creative_id}/"
+            f"scene-{scene_number}-{uuid.uuid4().hex}{extension}"
+        )
+        try:
+            self._get_client().storage.from_(settings.SUPABASE_STORAGE_BUCKET).upload(
+                storage_path,
+                image_bytes,
+                file_options={
+                    "content-type": content_type,
+                    "cache-control": "private,max-age=31536000",
+                    "upsert": False,
+                },
+            )
+            return storage_path
+        except SupabaseStorageError:
+            raise
+        except Exception as exc:
+            raise SupabaseStorageError("Supabase scene image upload failed") from exc
+
+    def create_signed_image_url(self, storage_path: str, expires_in: int = 21600) -> str:
+        if not storage_path or expires_in <= 0:
+            raise SupabaseStorageError("A valid scene image path and expiry are required")
+        try:
+            result = self._get_client().storage.from_(settings.SUPABASE_STORAGE_BUCKET).create_signed_url(
+                storage_path,
+                expires_in,
+            )
+            signed_url = (
+                result.get("signedURL") or result.get("signedUrl") or result.get("signed_url")
+                if isinstance(result, dict)
+                else None
+            )
+            if not isinstance(signed_url, str) or not signed_url.startswith("https://"):
+                raise SupabaseStorageError("Supabase returned an invalid signed image URL")
+            return signed_url
+        except SupabaseStorageError:
+            raise
+        except Exception as exc:
+            raise SupabaseStorageError("Supabase signed image URL creation failed") from exc
+
     def download_image(self, storage_path: str) -> bytes:
         try:
             return self._get_client().storage.from_(

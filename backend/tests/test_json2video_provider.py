@@ -37,6 +37,8 @@ class JSON2VideoProviderTests(unittest.TestCase):
         self.assertEqual(len(payload["scenes"][0]["elements"]), 3)
         self.assertEqual(payload["scenes"][0]["transition"]["type"], "xfade")
         self.assertEqual(payload["scenes"][0]["elements"][0]["type"], "image")
+        self.assertEqual(payload["scenes"][0]["elements"][0]["src"], "https://cdn.example/opening.jpg")
+        self.assertEqual(payload["scenes"][0]["elements"][0]["duration"], 7)
         self.assertEqual(payload["scenes"][0]["elements"][1]["type"], "voice")
         self.assertEqual(payload["scenes"][0]["elements"][2]["settings"]["color"], "#FFFFFF")
         voice_elements = [

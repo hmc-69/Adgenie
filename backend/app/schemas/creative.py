@@ -52,6 +52,7 @@ class VideoScene(BaseModel):
     duration: float = Field(..., ge=0, description="Scene duration in seconds")
     visual: str = Field(..., min_length=1)
     visual_description: Optional[str] = Field(default=None, min_length=1)
+    visual_prompt: Optional[str] = Field(default=None, min_length=1)
     voiceover: str = Field(..., min_length=1)
     on_screen_text: str = Field(..., min_length=1)
 

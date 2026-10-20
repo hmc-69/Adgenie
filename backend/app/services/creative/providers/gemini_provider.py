@@ -60,10 +60,11 @@ class GeminiCreativeProvider(BaseCreativeProvider):
                 "duration": {"type": "NUMBER"},
                 "visual": {"type": "STRING"},
                 "visual_description": {"type": "STRING"},
+                "visual_prompt": {"type": "STRING"},
                 "voiceover": {"type": "STRING"},
                 "on_screen_text": {"type": "STRING"},
             },
-            "required": ["scene_number", "duration", "visual", "visual_description", "voiceover", "on_screen_text"],
+            "required": ["scene_number", "duration", "visual", "visual_description", "visual_prompt", "voiceover", "on_screen_text"],
         }
         return {
             "type": "OBJECT",
@@ -108,7 +109,9 @@ seconds (not ranges or strings). The scene durations must add up to exactly the 
 and never exceed 15 seconds. Keep voiceovers short enough to be spoken within their scene timing,
 provide a concise visual_description for each scene describing a photograph to search for (include
 the subject, setting, and useful visual details). The visual_description is metadata only and must
-never be used as on-screen text. Preserve the scene's visual direction, narration, and caption;
+never be used as on-screen text. Also provide a visual_prompt for an image-generation model that
+describes the scene composition, product context, environment, and lighting. Do not include
+narration, captions, written words, or logos in this prompt. Preserve the scene's visual direction, narration, and caption;
 avoid excessive on-screen text, and include a short, clear call to action in the final scene's
 voiceover and on-screen text. The top-level duration must be the numeric sum of all scene durations.
 Do not generate the actual video.
@@ -127,8 +130,8 @@ using only this campaign information:
 
 Return exactly 2 to 4 scenes. Every scene duration must be a positive number of seconds. The
 top-level duration must equal the sum of all scene durations and that sum must be no greater than
-15 seconds. Include a concise photo-search visual_description in every scene; do not put it on
-screen. Keep every voiceover brief enough for its scene, use minimal on-screen text, and put a
+15 seconds. Include a concise photo-search visual_description and contextual visual_prompt in
+every scene; do not put either on screen. Keep every voiceover brief enough for its scene, use minimal on-screen text, and put a
 short call to action in the final scene's voiceover and on-screen text. Return JSON matching the
 requested schema only.
 """.strip()

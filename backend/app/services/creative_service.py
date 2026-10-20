@@ -3,7 +3,6 @@ from __future__ import annotations
 import logging
 from datetime import datetime, timezone
 from typing import Any, Dict, List
-from urllib.parse import urlparse
 
 import httpx
 from fastapi import HTTPException, status
@@ -26,7 +25,6 @@ from app.services.storage.supabase_storage import (
     get_supabase_storage_service,
 )
 from app.services.creative.providers.json2video_provider import JSON2VideoError, JSON2VideoProvider
-from app.services.creative.providers.pexels_image_search import PexelsImageSearch
 
 logger = logging.getLogger(__name__)
 
@@ -312,6 +310,19 @@ def _get_owned_video_creative(db: Session, campaign_id: int, creative_id: int, u
     return creative
 
 
+def _build_video_scene_image_prompt(scene: Any, campaign: Campaign) -> str:
+    scene_visual = scene.visual_prompt or scene.visual_description or scene.visual
+    return (
+        "Create one landscape 16:9 photographic image for a short advertising video. "
+        f"Scene composition and action: {scene_visual}. "
+        f"Product context: {campaign.product_name}. Campaign context: {campaign.description}. "
+        f"Intended audience: {campaign.target_audience}. Tone: {campaign.tone}. "
+        "Make the product or scene subject clear, use a polished realistic setting and balanced framing, "
+        "and leave useful negative space for a separate caption overlay. Do not include any words, "
+        "captions, typography, watermarks, or logos."
+    )
+
+
 def start_video_render(db: Session, campaign_id: int, creative_id: int, user_id: int) -> dict[str, Any]:
     creative = _get_owned_video_creative(db, campaign_id, creative_id, user_id)
     if creative.video_project_id:
@@ -323,52 +334,103 @@ def start_video_render(db: Session, campaign_id: int, creative_id: int, user_id:
     try:
         script = VideoCreativeScript.model_validate(creative.generated_content)
         campaign = get_owned_campaign(db, campaign_id=campaign_id, user_id=user_id)
-        campaign_payload = {
-            "name": campaign.name,
-            "product_name": campaign.product_name,
-            "description": campaign.description,
-            "target_audience": campaign.target_audience,
-            "platform": campaign.platform,
-            "objective": campaign.objective,
-            "tone": campaign.tone,
-            "keywords": campaign.keywords,
+        storage_service = get_supabase_storage_service()
+        existing_assets = creative.generated_content.get("scene_assets", [])
+        existing_by_scene = {
+            item.get("scene_number"): item
+            for item in existing_assets
+            if isinstance(item, dict) and item.get("scene_number")
         }
-        search = PexelsImageSearch()
         scene_assets = []
-        missing_scene_numbers = []
-        logger.info("Preparing image assets for %s scenes in campaign %s creative %s", len(script.scenes), campaign_id, creative_id)
+        uploaded_paths = []
+        image_provider = None
+        logger.info("Preparing generated images for %s scenes in campaign %s creative %s", len(script.scenes), campaign_id, creative_id)
         for scene in script.scenes:
-            query = scene.visual_description or scene.visual
-            asset = search.search(query, campaign_payload)
-            if not _has_public_image_url(asset):
-                simple_query = _simplify_scene_image_query(query, campaign_payload.get("product_name", ""))
-                if simple_query and simple_query.casefold() != query.casefold():
-                    logger.info("Retrying image search with a simpler query for scene %s", scene.scene_number)
-                    asset = search.search(simple_query, campaign_payload)
-            is_valid_image_url = _has_public_image_url(asset)
-            logger.info(
-                "Video scene %s image URL valid=%s",
-                scene.scene_number,
-                is_valid_image_url,
-            )
-            if not is_valid_image_url:
-                missing_scene_numbers.append(scene.scene_number)
+            image_prompt = _build_video_scene_image_prompt(scene, campaign)
+            saved_asset = existing_by_scene.get(scene.scene_number)
+            if (
+                isinstance(saved_asset, dict)
+                and saved_asset.get("storage_path")
+                and saved_asset.get("visual_prompt") == image_prompt
+                and saved_asset.get("content_type")
+            ):
+                scene_assets.append({
+                    "scene_number": scene.scene_number,
+                    "visual_prompt": image_prompt,
+                    "storage_path": saved_asset["storage_path"],
+                    "content_type": saved_asset["content_type"],
+                })
                 continue
-            scene_assets.append({"visual_description": query, **asset, "fallback": None})
-        if missing_scene_numbers:
-            logger.error(
-                "Image retrieval failed for campaign %s creative %s scenes %s; refusing to submit a blank render",
-                campaign_id,
-                creative_id,
-                missing_scene_numbers,
-            )
+            if image_provider is None:
+                try:
+                    image_provider = get_image_provider()
+                except ValueError as exc:
+                    raise HTTPException(
+                        status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                        detail="Image generation service is not configured.",
+                    ) from exc
+            try:
+                generated_image = image_provider.generate_image(image_prompt, aspect_ratio="16:9")
+                storage_path = storage_service.upload_video_scene_image(
+                    image_bytes=generated_image.content,
+                    content_type=generated_image.content_type,
+                    campaign_id=campaign_id,
+                    creative_id=creative_id,
+                    scene_number=scene.scene_number,
+                )
+            except CloudflareImageProviderError as exc:
+                _cleanup_video_scene_images(storage_service, uploaded_paths)
+                raise HTTPException(
+                    status_code=status.HTTP_502_BAD_GATEWAY,
+                    detail=f"Unable to generate an image for video scene {scene.scene_number}.",
+                ) from exc
+            except (SupabaseStorageError, ValueError) as exc:
+                _cleanup_video_scene_images(storage_service, uploaded_paths)
+                raise HTTPException(
+                    status_code=status.HTTP_502_BAD_GATEWAY,
+                    detail=f"Unable to store an image for video scene {scene.scene_number}.",
+                ) from exc
+            uploaded_paths.append(storage_path)
+            scene_assets.append({
+                "scene_number": scene.scene_number,
+                "visual_prompt": image_prompt,
+                "storage_path": storage_path,
+                "content_type": generated_image.content_type,
+            })
+
+        # Persist private paths before signing/submission so a retry can reuse these images.
+        creative.generated_content = {**creative.generated_content, "scene_assets": scene_assets}
+        try:
+            db.add(creative)
+            db.commit()
+        except SQLAlchemyError as exc:
+            db.rollback()
+            for storage_path in uploaded_paths:
+                try:
+                    storage_service.delete_image(storage_path)
+                except SupabaseStorageError:
+                    logger.warning("Failed to clean up a scene image after metadata persistence failed")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Unable to save generated video scene images.",
+            ) from exc
+
+        signed_scene_assets = []
+        try:
+            for scene_asset in scene_assets:
+                signed_url = storage_service.create_signed_image_url(
+                    scene_asset["storage_path"],
+                    expires_in=21600,
+                )
+                signed_scene_assets.append({**scene_asset, "image_url": signed_url})
+        except SupabaseStorageError as exc:
+            logger.warning("Unable to create signed URL for a video scene image")
             raise HTTPException(
                 status_code=status.HTTP_502_BAD_GATEWAY,
-                detail="Could not find publicly accessible images for video scene(s): "
-                + ", ".join(str(number) for number in missing_scene_numbers)
-                + ". Please retry after image search is available.",
-            )
-        result = JSON2VideoProvider().create_movie(script.model_dump(), scene_assets=scene_assets)
+                detail="Unable to prepare private scene images for video rendering.",
+            ) from exc
+
+        result = JSON2VideoProvider().create_movie(script.model_dump(), scene_assets=signed_scene_assets)
     except ValueError as exc:
         raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=f"Video scene image validation failed: {exc}") from exc
     except JSON2VideoError as exc:
@@ -403,18 +465,12 @@ def _simplify_scene_image_query(visual_description: str, product_name: str) -> s
     return " ".join(simple_query.split())[:120]
 
 
-def _has_public_image_url(asset: Any) -> bool:
-    image_url = asset.get("image_url") if isinstance(asset, dict) else None
-    try:
-        parsed_url = urlparse(image_url) if isinstance(image_url, str) else None
-    except ValueError:
-        return False
-    return bool(
-        parsed_url
-        and parsed_url.scheme == "https"
-        and parsed_url.netloc
-        and parsed_url.path.lower().endswith((".jpg", ".jpeg", ".png", ".gif", ".webp"))
-    )
+def _cleanup_video_scene_images(storage_service: Any, storage_paths: list[str]) -> None:
+    for storage_path in storage_paths:
+        try:
+            storage_service.delete_image(storage_path)
+        except SupabaseStorageError:
+            logger.warning("Failed to clean up an incomplete video scene image")
 
 
 def update_video_render_status(db: Session, campaign_id: int, creative_id: int, user_id: int) -> dict[str, Any]:

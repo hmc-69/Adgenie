@@ -44,6 +44,34 @@ class SupabaseStorageTests(unittest.TestCase):
 
         self.assertEqual(result, b"image-bytes")
 
+    def test_video_scene_upload_uses_unique_private_path_and_actual_format(self):
+        with patch(
+            "app.services.storage.supabase_storage.settings.SUPABASE_STORAGE_BUCKET",
+            "adgenie-images",
+        ):
+            path = self.service.upload_video_scene_image(b"webp-bytes", "image/webp", 4, 9, 2)
+
+        self.assertRegex(path, r"^campaigns/4/video-scenes/9/scene-2-[0-9a-f]{32}\.webp$")
+        options = self.bucket.upload.call_args.kwargs["file_options"]
+        self.assertEqual(options["content-type"], "image/webp")
+        self.assertEqual(options["upsert"], False)
+        self.assertTrue(options["cache-control"].startswith("private"))
+
+    def test_signed_scene_url_uses_existing_private_bucket_and_expiry(self):
+        self.bucket.create_signed_url.return_value = {
+            "signedURL": "https://storage.example/private-image.jpg?token=temporary",
+            "signedUrl": "https://storage.example/private-image.jpg?token=temporary",
+        }
+        with patch(
+            "app.services.storage.supabase_storage.settings.SUPABASE_STORAGE_BUCKET",
+            "adgenie-images",
+        ):
+            url = self.service.create_signed_image_url("campaigns/4/video-scenes/9/scene.jpg", 21600)
+
+        self.assertEqual(url, "https://storage.example/private-image.jpg?token=temporary")
+        self.storage.from_.assert_called_once_with("adgenie-images")
+        self.bucket.create_signed_url.assert_called_once_with("campaigns/4/video-scenes/9/scene.jpg", 21600)
+
     def test_download_maps_missing_object_to_not_found(self):
         self.bucket.download.side_effect = RuntimeError("404 not found")
         with patch(
