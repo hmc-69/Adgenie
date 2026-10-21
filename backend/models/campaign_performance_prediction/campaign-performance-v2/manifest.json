@@ -1,0 +1,38 @@
+{
+  "artifact_status": "synthetic_experiment_only",
+  "artifact_trust": "Trusted local output created by train_model.py; never load arbitrary pickle/joblib files.",
+  "model_version": "campaign-performance-v2",
+  "created_at_utc": "2026-10-21T16:25:11.571094+00:00",
+  "synthetic_data": true,
+  "feature_schema": [
+    "product_name",
+    "description",
+    "target_audience",
+    "platform",
+    "objective",
+    "tone",
+    "budget",
+    "keywords"
+  ],
+  "targets": [
+    "ctr_percent",
+    "conversion_rate_percent"
+  ],
+  "selected_models": {
+    "ctr_percent": "linear_regression",
+    "conversion_rate_percent": "linear_regression"
+  },
+  "dataset_sha256": "dee93b74b41d32c1cca1ef502671bdbf912008754f04b2a9c9e4f3e5a53de1ce",
+  "dependency_versions": {
+    "scikit-learn": "1.8.0",
+    "joblib": "1.6.0",
+    "numpy": "2.5.4",
+    "scipy": "1.18.1"
+  },
+  "python_version": "3.14.5",
+  "files": {
+    "campaign_performance_pipelines.joblib": "6434e00d01f236ea9910d46b044b2f4c03610137a51b0ecca03ecb9807ff4057",
+    "metrics.json": "535dd8d488f9eac0ed104c7a7e834b22bc19a8f38f3e35119f7ae11422287964",
+    "dataset_metadata.json": "6f13ef023e6c29c463ac9674c341a90a8a15c58dd20443029e90deb9b3ad7463"
+  }
+}

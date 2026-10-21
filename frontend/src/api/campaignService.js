@@ -80,6 +80,26 @@ export const campaignService = {
     return response.data;
   },
 
+  recordCampaignPerformance: async (campaignId, payload) => {
+    const response = await apiClient.post(`/api/campaigns/${campaignId}/performance`, payload);
+    return response.data;
+  },
+
+  getCampaignPerformance: async (campaignId, dateRange = {}) => {
+    const response = await apiClient.get(`/api/campaigns/${campaignId}/performance`, { params: dateRange });
+    return response.data;
+  },
+
+  getCampaignPerformanceAnalytics: async (campaignId, dateRange = {}) => {
+    const response = await apiClient.get(`/api/campaigns/${campaignId}/performance/analytics`, { params: dateRange });
+    return response.data;
+  },
+
+  predictCampaignPerformance: async (campaignId) => {
+    const response = await apiClient.post(`/api/campaigns/${campaignId}/performance/predict`);
+    return response.data;
+  },
+
   createAudienceAnalysis: async (campaignId) => {
     const response = await apiClient.post(
       `/api/campaigns/${campaignId}/audience-analysis`,

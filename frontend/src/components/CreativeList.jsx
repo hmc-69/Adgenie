@@ -30,7 +30,7 @@ const SavedCreativeCard = ({ creative, campaignId, campaignName, onOpenCreative 
           <img src={previewUrl} alt={`${preview} advertisement`} />
         ) : (
           <div className={`saved-creative-placeholder ${creative.type === 'video' ? 'video-placeholder' : ''}`}>
-            <span>{creative.type === 'image' ? 'Image brief' : `${content.scenes?.length || 0} scenes`}</span>
+            <span>{creative.type === 'image' ? 'Image brief' : creative.video_url ? 'Rendered video saved' : `${content.scenes?.length || 0} scenes`}</span>
           </div>
         )}
       </div>
@@ -45,9 +45,13 @@ const SavedCreativeCard = ({ creative, campaignId, campaignName, onOpenCreative 
           ? [creative.image_aspect_ratio, creative.image_style].filter(Boolean).join(' · ') || 'Advertisement image saved'
           : creative.type === 'image'
             ? content.primary_text || content.description || 'Image brief ready for editing.'
-            : (content.scenes && content.scenes.length ? `${content.scenes.length} scenes` : 'Video script ready for editing.')}
+            : creative.video_url
+              ? `Rendered video saved · ${content.scenes?.length || 0} scenes`
+              : (content.scenes && content.scenes.length ? `${content.scenes.length} scenes` : 'Video script ready for editing.')}
       </p>
-      <button type="button" className="btn-secondary" onClick={() => onOpenCreative(creative)}>Open / Edit</button>
+      <button type="button" className="btn-secondary" onClick={() => onOpenCreative(creative)}>
+        {creative.type === 'video' && creative.video_url ? 'View / Edit' : 'Open / Edit'}
+      </button>
     </article>
   );
 };

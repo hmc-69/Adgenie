@@ -1,0 +1,47 @@
+{
+  "dataset_version": "campaign-performance-synthetic-v1",
+  "generated_at_utc": "2026-10-21T16:22:08.376765+00:00",
+  "random_seed": 42,
+  "row_count": 5000,
+  "feature_count": 8,
+  "feature_columns": [
+    "product_name",
+    "description",
+    "target_audience",
+    "platform",
+    "objective",
+    "tone",
+    "budget",
+    "keywords"
+  ],
+  "feature_data_types": {
+    "product_name": "string",
+    "description": "string",
+    "target_audience": "string",
+    "platform": "string",
+    "objective": "string",
+    "tone": "string",
+    "budget": "number|null",
+    "keywords": "string"
+  },
+  "target_definitions": {
+    "ctr_percent": "Click-through rate percentage, generated directly as a bounded synthetic target.",
+    "conversion_rate_percent": "Conversion percentage of clicks, generated directly as a bounded synthetic target."
+  },
+  "target_units": {
+    "ctr_percent": "percent",
+    "conversion_rate_percent": "percent"
+  },
+  "synthetic_data": true,
+  "group_column": "scenario_group",
+  "generation_assumptions": [
+    "Rows describe simulated pre-launch campaign briefs, not real campaigns or users.",
+    "Targets are directly simulated bounded rates using documented category effects, a shared scenario effect, and random noise.",
+    "Conversion rate is a target rate, not conversions divided by fabricated clicks; zero-click observations are therefore not generated.",
+    "Budget represents planned budget and is not actual spend.",
+    "Duration and creative format are omitted because the application does not store them.",
+    "The scenario group is used only to isolate related synthetic rows across data splits and is never a predictive feature."
+  ],
+  "dataset_sha256": "dee93b74b41d32c1cca1ef502671bdbf912008754f04b2a9c9e4f3e5a53de1ce",
+  "generator_version": "1.0.0"
+}

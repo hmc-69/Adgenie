@@ -9,6 +9,8 @@ import { CreativeList } from '../components/CreativeList';
 import { CreativeModal } from '../components/CreativeModal';
 import { CreativeWorkspace } from '../components/CreativeWorkspace';
 import { AudienceAnalysisPanel } from '../components/AudienceAnalysisPanel';
+import { CampaignPerformance } from '../components/CampaignPerformance';
+import { CampaignPerformancePrediction } from '../components/CampaignPerformancePrediction';
 
 const formatDate = (dateString) => {
   if (!dateString) return 'N/A';
@@ -41,6 +43,7 @@ export const CampaignDetails = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [campaign, setCampaign] = useState(null);
+  const [activeCampaignSection, setActiveCampaignSection] = useState('creative');
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState(location.state?.successMessage || '');
@@ -63,6 +66,7 @@ export const CampaignDetails = () => {
   const videoUrlRef = useRef(null);
   const videoPollRef = useRef(null);
   const [videoRender, setVideoRender] = useState(null);
+  const [isSavingVideo, setIsSavingVideo] = useState(false);
   const [isStartingVideoRender, setIsStartingVideoRender] = useState(false);
 
   const setImagePreview = (image, blob) => {
@@ -231,22 +235,16 @@ export const CampaignDetails = () => {
   };
 
   const handleGenerateCreative = async () => {
-    if (creativeType === 'image') {
-      console.info('[image-brief-debug]', { stage: 'parent_callback_start', campaignId: campaign?.id });
-    }
     if (!campaign?.id) return;
     selectedCreativeIdRef.current = null;
     setCreativeError('');
     setIsGeneratingCreative(true);
 
     try {
-      let payload;
-      if (creativeType === 'image') {
-        console.info('[image-brief-debug]', { stage: 'before_generateImageBrief_service_call', campaignId: campaign.id });
-        payload = await creativeService.generateImageBrief(campaign.id);
-      } else {
-        payload = await creativeService.generateVideoScript(campaign.id);
-      }
+      const payload =
+        creativeType === 'image'
+          ? await creativeService.generateImageBrief(campaign.id)
+          : await creativeService.generateVideoScript(campaign.id);
       setCreativeContent(payload.generated_content || payload);
       setLastSavedCreative(null);
     } catch (error) {
@@ -332,6 +330,30 @@ export const CampaignDetails = () => {
     if (!generatedImage?.creative_id) return;
     await loadSavedCreatives();
     setSuccessMessage('Advertisement image is saved to this campaign.');
+  };
+
+  const handleSaveRenderedVideo = async () => {
+    const creativeId = selectedCreativeIdRef.current;
+    if (!campaign?.id || !creativeId || !videoRender?.videoUrl) return;
+
+    setIsSavingVideo(true);
+    setCreativeError('');
+    try {
+      const data = await creativeService.listCreatives(campaign.id);
+      const creatives = data.creatives || [];
+      setSavedCreatives(creatives);
+      const savedVideo = creatives.find((creative) => creative.id === creativeId && creative.video_url);
+      if (!savedVideo) {
+        setCreativeError('The rendered video is not available in the campaign library yet.');
+        return;
+      }
+      setLastSavedCreative(savedVideo);
+      setSuccessMessage('Rendered video saved to this campaign. Open it from Saved Creatives to view it again.');
+    } catch (error) {
+      setCreativeError(getApiErrorMessage(error, 'Unable to save the rendered video to this campaign.'));
+    } finally {
+      setIsSavingVideo(false);
+    }
   };
 
   const handleDownloadGeneratedImage = () => {
@@ -484,8 +506,19 @@ export const CampaignDetails = () => {
         </div>
       </section>
 
-      <AudienceAnalysisPanel key={campaign.id} campaignId={campaign.id} />
+      <nav className="campaign-section-switcher" aria-label="Campaign workspace sections">
+        <button type="button" className={activeCampaignSection === 'creative' ? 'selected' : ''} aria-pressed={activeCampaignSection === 'creative'} aria-controls="campaign-creative-panel" onClick={() => setActiveCampaignSection('creative')}>
+          <strong>AI Creative</strong><span>Generate and manage campaign ads</span>
+        </button>
+        <button type="button" className={activeCampaignSection === 'audience' ? 'selected' : ''} aria-pressed={activeCampaignSection === 'audience'} aria-controls="campaign-audience-panel" onClick={() => setActiveCampaignSection('audience')}>
+          <strong>Audience Analysis</strong><span>Explore audience insights and saved analyses</span>
+        </button>
+        <button type="button" className={activeCampaignSection === 'performance' ? 'selected' : ''} aria-pressed={activeCampaignSection === 'performance'} aria-controls="campaign-performance-panel" onClick={() => setActiveCampaignSection('performance')}>
+          <strong>Performance Prediction</strong><span>Review recorded results and estimates</span>
+        </button>
+      </nav>
 
+      <div id="campaign-creative-panel" className="campaign-workspace-panel" role="region" aria-label="AI Creative" hidden={activeCampaignSection !== 'creative'}>
       <section className="creative-studio-section" id="creative-studio">
         <div className="studio-heading-row">
           <div>
@@ -523,6 +556,8 @@ export const CampaignDetails = () => {
             isStartingVideoRender={isStartingVideoRender}
             onStartVideoRender={handleStartVideoRender}
             onDownloadVideo={handleDownloadRenderedVideo}
+            onSaveVideo={handleSaveRenderedVideo}
+            isSavingVideo={isSavingVideo}
           />
         )}
       </section>
@@ -539,6 +574,16 @@ export const CampaignDetails = () => {
           onOpenCreative={handleOpenCreative}
         />
       </section>
+      </div>
+
+      <div id="campaign-audience-panel" className="campaign-workspace-panel" role="region" aria-label="Audience Analysis" hidden={activeCampaignSection !== 'audience'}>
+        <AudienceAnalysisPanel key={`audience-${campaign.id}`} campaignId={campaign.id} />
+      </div>
+
+      <div id="campaign-performance-panel" className="campaign-workspace-panel" role="region" aria-label="Performance Prediction" hidden={activeCampaignSection !== 'performance'}>
+        <CampaignPerformance key={`performance-${campaign.id}`} campaignId={campaign.id} />
+        <CampaignPerformancePrediction key={`prediction-${campaign.id}`} campaignId={campaign.id} />
+      </div>
 
       <CreativeModal
         open={creativeModalOpen}

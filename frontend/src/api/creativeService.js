@@ -1,15 +1,24 @@
 import { apiClient } from './client.js';
 import { getRenderedVideoPath } from '../utils/videoPlayback.js';
 
+const CREATIVE_GENERATION_TIMEOUT_MS = 120_000;
+
 export const creativeService = {
   generateImageBrief: async (campaignId) => {
-    console.info('[image-brief-debug]', { stage: 'generateImageBrief_service_start', campaignId });
-    const response = await apiClient.post('/api/creative/image-brief', { campaign_id: Number(campaignId) });
+    const response = await apiClient.post(
+      '/api/creative/image-brief',
+      { campaign_id: Number(campaignId) },
+      { timeout: CREATIVE_GENERATION_TIMEOUT_MS },
+    );
     return response.data;
   },
 
   generateVideoScript: async (campaignId) => {
-    const response = await apiClient.post('/api/creative/video-script', { campaign_id: Number(campaignId) });
+    const response = await apiClient.post(
+      '/api/creative/video-script',
+      { campaign_id: Number(campaignId) },
+      { timeout: CREATIVE_GENERATION_TIMEOUT_MS },
+    );
     return response.data;
   },
 

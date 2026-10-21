@@ -8,12 +8,14 @@ from app.models.user import User  # Ensure models are loaded before create_all
 from app.models.campaign import Campaign
 from app.models.creative import Creative
 from app.models.audience_analysis import AudienceAnalysisRun
+from app.models.campaign_performance import CampaignPerformanceDaily
 from app.routers.auth import router as auth_router
 from app.routers.campaigns import router as campaigns_router
 from app.routers.creative import router as creative_router
 from app.routers.audience_analysis import router as audience_analysis_router
+from app.routers.campaign_performance import router as campaign_performance_router
 
-_REGISTERED_MODELS = (User, Campaign, Creative, AudienceAnalysisRun)
+_REGISTERED_MODELS = (User, Campaign, Creative, AudienceAnalysisRun, CampaignPerformanceDaily)
 
 
 @asynccontextmanager
@@ -48,6 +50,7 @@ app.include_router(auth_router)
 app.include_router(campaigns_router)
 app.include_router(creative_router)
 app.include_router(audience_analysis_router)
+app.include_router(campaign_performance_router)
 
 
 @app.get("/")

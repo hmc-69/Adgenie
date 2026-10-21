@@ -1,0 +1,128 @@
+{
+  "status": "synthetic_experiment_only",
+  "dataset_type": "synthetic",
+  "dataset_version": "campaign-performance-synthetic-v1",
+  "dataset_sha256": "dee93b74b41d32c1cca1ef502671bdbf912008754f04b2a9c9e4f3e5a53de1ce",
+  "targets": {
+    "ctr_percent": "Click-through rate percentage, generated directly as a bounded synthetic target.",
+    "conversion_rate_percent": "Conversion percentage of clicks, generated directly as a bounded synthetic target."
+  },
+  "target_units": {
+    "ctr_percent": "percent",
+    "conversion_rate_percent": "percent"
+  },
+  "feature_schema": [
+    "product_name",
+    "description",
+    "target_audience",
+    "platform",
+    "objective",
+    "tone",
+    "budget",
+    "keywords"
+  ],
+  "features_excluded_for_leakage": [
+    "actual_spend",
+    "campaign_id",
+    "clicks",
+    "conversion_rate_percent",
+    "conversions",
+    "ctr_percent",
+    "id",
+    "impressions",
+    "revenue",
+    "roi",
+    "scenario_group",
+    "spend",
+    "user_id"
+  ],
+  "split_strategy": {
+    "name": "GroupShuffleSplit, groups held out across train, validation, and test",
+    "train_rows": 3000,
+    "validation_rows": 1000,
+    "test_rows": 1000,
+    "train_groups": 600,
+    "validation_groups": 200,
+    "test_groups": 200,
+    "seed": 42
+  },
+  "evaluation": {
+    "ctr_percent": {
+      "selected_model": "linear_regression",
+      "selection_rule": "Lowest validation MAE among DummyRegressor, LinearRegression, and RandomForestRegressor.",
+      "validation_metrics_by_model": {
+        "dummy_mean": {
+          "mae": 2.6144485501744934,
+          "rmse": 3.345794889652094,
+          "r2": -2.487398662998075e-05
+        },
+        "linear_regression": {
+          "mae": 1.9948792273257783,
+          "rmse": 2.5936347193456424,
+          "r2": 0.3990618192914376
+        },
+        "random_forest": {
+          "mae": 2.0721701403966004,
+          "rmse": 2.7069160440320577,
+          "r2": 0.3454214829253709
+        }
+      },
+      "test_metrics": {
+        "mae": 2.043199214741464,
+        "rmse": 2.731920322183431,
+        "r2": 0.3457034616557917
+      },
+      "baseline_model": "dummy_mean",
+      "baseline_test_metrics": {
+        "mae": 2.62099597687392,
+        "rmse": 3.3778777795722688,
+        "r2": -0.0002911542244325993
+      },
+      "meaningful_improvement_over_baseline": true,
+      "meaningful_improvement_rule": "Selected test MAE is at least 5% lower than baseline test MAE."
+    },
+    "conversion_rate_percent": {
+      "selected_model": "linear_regression",
+      "selection_rule": "Lowest validation MAE among DummyRegressor, LinearRegression, and RandomForestRegressor.",
+      "validation_metrics_by_model": {
+        "dummy_mean": {
+          "mae": 4.36811580708192,
+          "rmse": 5.761749652810114,
+          "r2": -0.0001604682642462052
+        },
+        "linear_regression": {
+          "mae": 3.354589928798291,
+          "rmse": 4.5061156785632805,
+          "r2": 0.3882618163599767
+        },
+        "random_forest": {
+          "mae": 3.375248749486548,
+          "rmse": 4.537384692939057,
+          "r2": 0.3797423641876223
+        }
+      },
+      "test_metrics": {
+        "mae": 3.4878095443409127,
+        "rmse": 4.654517621331835,
+        "r2": 0.4025119308929832
+      },
+      "baseline_model": "dummy_mean",
+      "baseline_test_metrics": {
+        "mae": 4.603243672647839,
+        "rmse": 6.021613015852542,
+        "r2": -1.2810336255775212e-05
+      },
+      "meaningful_improvement_over_baseline": true,
+      "meaningful_improvement_rule": "Selected test MAE is at least 5% lower than baseline test MAE."
+    }
+  },
+  "prediction_bounds": {
+    "strategy": "Clip finite estimator outputs to the mathematically valid interval [0, 100] percent.",
+    "clipping_implies_accuracy": false
+  },
+  "limitations": [
+    "All training and evaluation targets are synthetic and based on assumptions in the dataset generator.",
+    "Held-out synthetic metrics do not estimate accuracy on real advertising campaigns.",
+    "A numerical prediction is not evidence that a campaign will achieve that rate."
+  ]
+}

@@ -34,6 +34,9 @@ class Campaign(Base):
     audience_analysis_runs = relationship(
         "AudienceAnalysisRun", back_populates="campaign", cascade="all, delete-orphan"
     )
+    performance_records = relationship(
+        "CampaignPerformanceDaily", back_populates="campaign", cascade="all, delete-orphan"
+    )
 
     def __repr__(self) -> str:
         return f"<Campaign id={self.id} name={self.name} user_id={self.user_id}>"
