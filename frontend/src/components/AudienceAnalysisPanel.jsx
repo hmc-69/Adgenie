@@ -73,6 +73,16 @@ const AudienceAnalysisResultView = ({ run, isLatest }) => {
         </section>
       )}
 
+      {!prediction && (
+        <section className="audience-ml-prediction" aria-label="ML audience prediction">
+          <p className="page-kicker">Experimental classifier</p>
+          <h3>ML prediction not available for this saved analysis</h3>
+          <p className="audience-ml-scores-unavailable">
+            The local classifier could not return a prediction for this saved analysis.
+          </p>
+        </section>
+      )}
+
       <article className="audience-overview-card">
         <span className="meta-label">Audience overview</span>
         <p>{result.audience_overview}</p>

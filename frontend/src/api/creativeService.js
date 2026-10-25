@@ -2,6 +2,9 @@ import { apiClient } from './client.js';
 import { getRenderedVideoPath } from '../utils/videoPlayback.js';
 
 const CREATIVE_GENERATION_TIMEOUT_MS = 120_000;
+// Render startup may generate and upload one image per scene before submitting
+// the asynchronous JSON2Video job. Each image provider call can take up to 120s.
+const VIDEO_RENDER_START_TIMEOUT_MS = 300_000;
 
 export const creativeService = {
   generateImageBrief: async (campaignId) => {
@@ -26,7 +29,7 @@ export const creativeService = {
     const response = await apiClient.post('/api/creative/video/render', {
       campaign_id: Number(campaignId),
       creative_id: Number(creativeId),
-    });
+    }, { timeout: VIDEO_RENDER_START_TIMEOUT_MS });
     return response.data;
   },
 

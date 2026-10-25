@@ -7,6 +7,7 @@ from app.database import get_db
 from app.models.user import User
 from app.routers.auth import get_current_user
 from app.schemas.audience_analysis import (
+    AudienceArchetypePrediction,
     AudienceAnalysisHistoryResponse,
     AudienceAnalysisRunResponse,
 )
@@ -14,6 +15,8 @@ from app.services.audience_analysis_service import (
     create_audience_analysis,
     get_audience_analysis_history,
 )
+from app.services.audience_classifier import AudienceClassifierError, predict_audience_archetype
+from app.core.config import settings
 
 
 logger = logging.getLogger(__name__)
@@ -48,4 +51,14 @@ def get_audience_analysis_history_endpoint(
     db: Session = Depends(get_db),
 ):
     analyses = get_audience_analysis_history(db=db, campaign_id=campaign_id, user_id=current_user.id)
-    return AudienceAnalysisHistoryResponse(analyses=analyses, total=len(analyses))
+    response_analyses = [AudienceAnalysisRunResponse.model_validate(run) for run in analyses]
+    if settings.AUDIENCE_CLASSIFIER_ENABLED:
+        for response in response_analyses:
+            if response.result.model_prediction is not None:
+                continue
+            try:
+                prediction = predict_audience_archetype(response.input_snapshot)
+                response.result.model_prediction = AudienceArchetypePrediction.model_validate(prediction)
+            except AudienceClassifierError:
+                logger.exception("Audience classifier unavailable for saved run %s", response.id)
+    return AudienceAnalysisHistoryResponse(analyses=response_analyses, total=len(response_analyses))

@@ -1,6 +1,11 @@
 import axios from 'axios';
 
 const API_BASE_URL = 'http://127.0.0.1:8000';
+let unauthorizedHandler = null;
+
+export const setUnauthorizedHandler = (handler) => {
+  unauthorizedHandler = typeof handler === 'function' ? handler : null;
+};
 
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,
@@ -30,8 +35,9 @@ apiClient.interceptors.response.use(
   (error) => {
     if (error.response && error.response.status === 401) {
       // Don't auto-redirect if login itself failed with 401
-      if (!error.config.url.includes('/api/auth/login')) {
+      if (!error.config?.url?.includes('/api/auth/login')) {
         localStorage.removeItem('adgenie_auth_token');
+        unauthorizedHandler?.();
       }
     }
     return Promise.reject(error);

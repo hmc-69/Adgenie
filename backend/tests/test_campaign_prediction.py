@@ -227,6 +227,17 @@ class CampaignPredictionApiTests(unittest.TestCase):
         self.assertEqual(payload["evaluation"]["conversion_rate"]["test_r2"], saved["conversion_rate_percent"]["test_metrics"]["r2"])
         self.assertEqual(self.db.query(CampaignPerformanceDaily).count(), 0)
 
+    def test_prediction_accepts_null_empty_and_whitespace_keywords(self):
+        for keywords in (None, "", "   \t  "):
+            with self.subTest(keywords=keywords):
+                self.campaign.keywords = keywords
+                self.db.commit()
+                response = self.client.post(f"/api/campaigns/{self.campaign.id}/performance/predict")
+                self.assertEqual(response.status_code, 200, response.text)
+                values = response.json()["predictions"]
+                self.assertTrue(0 <= values["ctr_percent"] <= 100)
+                self.assertTrue(0 <= values["conversion_rate_percent"] <= 100)
+
     def test_authentication_ownership_and_nonexistent_campaign_are_enforced(self):
         anonymous_app = FastAPI()
         anonymous_app.include_router(router)

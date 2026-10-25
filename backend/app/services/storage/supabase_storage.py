@@ -193,6 +193,13 @@ class SupabaseStorageService:
             raise SupabaseStorageError("Supabase video retrieval failed") from exc
 
     def delete_image(self, storage_path: str) -> None:
+        self.delete_object(storage_path, media_kind="image")
+
+    def delete_video(self, storage_path: str) -> None:
+        self.delete_object(storage_path, media_kind="video")
+
+    def delete_object(self, storage_path: str, *, media_kind: str = "media") -> None:
+        """Delete an object; callers treat not-found as already cleaned up."""
         try:
             self._get_client().storage.from_(
                 settings.SUPABASE_STORAGE_BUCKET
@@ -200,7 +207,9 @@ class SupabaseStorageService:
         except SupabaseStorageError:
             raise
         except Exception as exc:
-            raise SupabaseStorageError("Supabase image deletion failed") from exc
+            if "not found" in str(exc).lower() or "404" in str(exc):
+                raise SupabaseStorageNotFoundError("Stored media object does not exist") from exc
+            raise SupabaseStorageError(f"Supabase {media_kind} deletion failed") from exc
 
 
 _supabase_storage_service = SupabaseStorageService()

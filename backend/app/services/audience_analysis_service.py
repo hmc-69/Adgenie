@@ -57,8 +57,8 @@ def create_audience_analysis(
             # Resolve the prediction first so an unavailable artifact fails clearly
             # without allowing the text provider to stand in for the classifier.
             prediction = predict_audience_archetype(snapshot)
-        except AudienceClassifierError:
-            logger.error("Configured audience classifier is unavailable for campaign %s", campaign_id)
+        except AudienceClassifierError as exc:
+            logger.error("Configured audience classifier is unavailable for campaign %s: %s", campaign_id, exc)
             raise HTTPException(
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
                 detail="The audience classifier is enabled but its local model is unavailable or incompatible.",

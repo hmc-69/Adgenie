@@ -1,12 +1,24 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { AuthContext } from './AuthContextInstance';
-import { authAPI } from '../api/client';
+import { authAPI, setUnauthorizedHandler } from '../api/client';
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(() => localStorage.getItem('adgenie_auth_token'));
   const [loading, setLoading] = useState(true);
   const [authError, setAuthError] = useState(null);
+
+  const resetSession = useCallback(() => {
+    localStorage.removeItem('adgenie_auth_token');
+    setToken(null);
+    setUser(null);
+    setAuthError(null);
+  }, []);
+
+  useEffect(() => {
+    setUnauthorizedHandler(resetSession);
+    return () => setUnauthorizedHandler(null);
+  }, [resetSession]);
 
   // Verify and fetch user profile if token exists on application mount
   useEffect(() => {
@@ -17,18 +29,15 @@ export const AuthProvider = ({ children }) => {
           const profile = await authAPI.getMe();
           setUser(profile);
           setToken(storedToken);
-        } catch (err) {
-          console.warn('Invalid or expired token, clearing session:', err);
-          localStorage.removeItem('adgenie_auth_token');
-          setToken(null);
-          setUser(null);
+        } catch {
+          resetSession();
         }
       }
       setLoading(false);
     };
 
     initAuth();
-  }, []);
+  }, [resetSession]);
 
   const login = async (email, password) => {
     setAuthError(null);
@@ -77,10 +86,7 @@ export const AuthProvider = ({ children }) => {
     } catch (err) {
       console.warn('Logout notification error:', err);
     } finally {
-      localStorage.removeItem('adgenie_auth_token');
-      setToken(null);
-      setUser(null);
-      setAuthError(null);
+      resetSession();
     }
   };
 

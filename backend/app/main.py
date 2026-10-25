@@ -3,6 +3,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.core.config import validate_security_configuration
 from app.database import Base, engine, ensure_creative_image_columns, test_database_connection
 from app.models.user import User  # Ensure models are loaded before create_all
 from app.models.campaign import Campaign
@@ -20,13 +21,9 @@ _REGISTERED_MODELS = (User, Campaign, Creative, AudienceAnalysisRun, CampaignPer
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Initialize database tables on startup if they do not exist
-    try:
-        Base.metadata.create_all(bind=engine)
-        ensure_creative_image_columns()
-        print("Database tables verified/created successfully.")
-    except Exception as error:
-        print(f"Error during database table initialization: {error}")
+    validate_security_configuration()
+    Base.metadata.create_all(bind=engine)
+    ensure_creative_image_columns()
     yield
 
 

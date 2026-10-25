@@ -11,6 +11,7 @@ import { CreativeWorkspace } from '../components/CreativeWorkspace';
 import { AudienceAnalysisPanel } from '../components/AudienceAnalysisPanel';
 import { CampaignPerformance } from '../components/CampaignPerformance';
 import { CampaignPerformancePrediction } from '../components/CampaignPerformancePrediction';
+import { getCampaignWorkspaceFromHash } from '../utils/campaignWorkspace';
 
 const formatDate = (dateString) => {
   if (!dateString) return 'N/A';
@@ -68,6 +69,18 @@ export const CampaignDetails = () => {
   const [videoRender, setVideoRender] = useState(null);
   const [isSavingVideo, setIsSavingVideo] = useState(false);
   const [isStartingVideoRender, setIsStartingVideoRender] = useState(false);
+
+  useEffect(() => {
+    const section = getCampaignWorkspaceFromHash(location.hash);
+    if (!section) return undefined;
+    const frame = requestAnimationFrame(() => {
+      setActiveCampaignSection(section);
+      requestAnimationFrame(() => {
+        document.getElementById('creative-studio')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [id, location.hash]);
 
   const setImagePreview = (image, blob) => {
     if (generatedImageUrlRef.current) {

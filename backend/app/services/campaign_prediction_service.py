@@ -209,6 +209,10 @@ def predict_campaign_performance(db: Session, campaign_id: int, user_id: int) ->
     for field in ("platform", "objective", "tone"):
         row[field] = row[field].value
     row["budget"] = float(row["budget"]) if row["budget"] is not None else None
+    # The trained pipeline's TF-IDF branch expects text. Normalize absent and
+    # whitespace-only optional keywords without changing populated input.
+    keywords = row["keywords"]
+    row["keywords"] = keywords.strip() if isinstance(keywords, str) else ""
     try:
         import numpy as np
 

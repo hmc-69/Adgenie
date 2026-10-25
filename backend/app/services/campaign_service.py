@@ -7,6 +7,10 @@ from sqlalchemy.orm import Session
 
 from app.models.campaign import Campaign
 from app.schemas.campaign import CampaignCreate, CampaignUpdate
+from app.services.storage.supabase_storage import (
+    SupabaseStorageNotFoundError,
+    get_supabase_storage_service,
+)
 
 
 CAMPAIGN_NOT_FOUND_DETAIL = "Campaign not found"
@@ -110,6 +114,35 @@ def update_campaign(
 
 def delete_campaign(db: Session, campaign_id: int, user_id: int) -> None:
     campaign = get_owned_campaign(db, campaign_id=campaign_id, user_id=user_id)
+    # Clean storage before committing relational deletion. If a provider call
+    # fails, the campaign and its object paths remain so deletion can be retried.
+    media_paths: set[str] = set()
+    creatives = list(campaign.creatives)
+    for creative in creatives:
+        if creative.image_path:
+            media_paths.add(creative.image_path)
+        if creative.video_path:
+            media_paths.add(creative.video_path)
+        content = creative.generated_content if isinstance(creative.generated_content, dict) else {}
+        for scene in content.get("scene_assets", []):
+            if isinstance(scene, dict) and scene.get("storage_path"):
+                media_paths.add(scene["storage_path"])
+    storage = get_supabase_storage_service()
+    try:
+        for storage_path in sorted(media_paths):
+            try:
+                if storage_path.lower().endswith(".mp4"):
+                    storage.delete_video(storage_path)
+                else:
+                    storage.delete_image(storage_path)
+            except SupabaseStorageNotFoundError:
+                # Already absent is an idempotent cleanup success.
+                continue
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Campaign media cleanup failed. The campaign was retained; retry deletion later.",
+        ) from exc
     try:
         db.delete(campaign)
         db.commit()

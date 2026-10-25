@@ -56,3 +56,23 @@ test('video script generation uses its backend POST route', async () => {
     apiClient.get = originalGet;
   }
 });
+
+test('video render startup allows time to generate scene images before submission', async () => {
+  const originalPost = apiClient.post;
+  const calls = [];
+  apiClient.post = async (...args) => {
+    calls.push(args);
+    return { data: { project_id: 'project-1', status: 'submitted' } };
+  };
+
+  try {
+    await creativeService.startVideoRender(4, 12);
+    assert.deepEqual(calls, [[
+      '/api/creative/video/render',
+      { campaign_id: 4, creative_id: 12 },
+      { timeout: 300_000 },
+    ]]);
+  } finally {
+    apiClient.post = originalPost;
+  }
+});
