@@ -104,8 +104,17 @@ def create_audience_analysis(
             status_code=status.HTTP_502_BAD_GATEWAY,
             detail="The AI provider returned an invalid audience analysis. Please try again.",
         ) from None
-    except Exception:
-        logger.error("Audience analysis provider failed for campaign %s", campaign_id)
+    except Exception as exc:
+        # Keep provider payloads and exception text out of logs; SDK errors can
+        # include request details. The exception type and HTTP status are
+        # enough to distinguish configuration, quota, and transient failures.
+        provider_status = getattr(exc, "code", None)
+        logger.error(
+            "Audience analysis provider failed for campaign %s (error_type=%s, provider_status=%s)",
+            campaign_id,
+            type(exc).__name__,
+            provider_status if isinstance(provider_status, (int, str)) else "unknown",
+        )
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="Audience analysis is temporarily unavailable. Please try again.",

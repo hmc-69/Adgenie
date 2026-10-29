@@ -48,6 +48,7 @@ export const CreativeWorkspace = ({
   isGeneratingImage,
   generatedContent,
   errorMessage,
+  errorRef,
   onGenerate,
   onRegenerate,
   onSave,
@@ -171,7 +172,7 @@ export const CreativeWorkspace = ({
             <button type="button" className="btn-secondary" onClick={onSave} disabled={isGenerating || !hasGenerated}>Save Creative</button>
           </div>
         </div>
-        {errorMessage && <div className="alert alert-error" role="alert"><span>{errorMessage}</span></div>}
+        {errorMessage && <div ref={errorRef} className="alert alert-error" role="alert"><span>{errorMessage}</span></div>}
         {savedCreative && <div className="alert alert-success" role="status"><span>Saved as {savedCreative.type} creative.</span></div>}
 
         <div className="creative-studio-layout">
@@ -285,7 +286,7 @@ export const CreativeWorkspace = ({
         </div>
       </div>
 
-      {errorMessage && <div className="alert alert-error" role="alert"><span>{errorMessage}</span></div>}
+      {errorMessage && <div ref={errorRef} className="alert alert-error" role="alert"><span>{errorMessage}</span></div>}
       {savedCreative && <div className="alert alert-success" role="status"><span>Saved as {savedCreative.type} creative.</span></div>}
 
       <div className="creative-form-grid">
@@ -331,7 +332,7 @@ export const CreativeWorkspace = ({
         <input className="form-input form-input-plain" value={localVideo.final_cta} onChange={(event) => handleVideoFieldChange('final_cta', event.target.value)} />
       </div>
       {videoRender && (
-        <div className="creative-output-panel">
+        <div className="creative-output-panel video-render-result">
           <strong>Video render: {videoRender.status}</strong>
           {videoRender.status === 'failed' ? (
             <p className="alert alert-error">{videoRender.error || 'The video is unavailable. See the error details above.'} No automatic retry was submitted.</p>

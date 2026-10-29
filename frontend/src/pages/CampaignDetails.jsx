@@ -66,9 +66,15 @@ export const CampaignDetails = () => {
   const imageRequestInFlightRef = useRef(false);
   const videoUrlRef = useRef(null);
   const videoPollRef = useRef(null);
+  const creativeErrorRef = useRef(null);
   const [videoRender, setVideoRender] = useState(null);
   const [isSavingVideo, setIsSavingVideo] = useState(false);
   const [isStartingVideoRender, setIsStartingVideoRender] = useState(false);
+
+  useEffect(() => {
+    if (!creativeError) return;
+    requestAnimationFrame(() => creativeErrorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }));
+  }, [creativeError]);
 
   useEffect(() => {
     const section = getCampaignWorkspaceFromHash(location.hash);
@@ -128,6 +134,7 @@ export const CampaignDetails = () => {
           }
           await loadRenderedVideo(creativeId, statusResponse.video_url);
           await loadSavedCreatives();
+          requestAnimationFrame(() => document.querySelector('.video-render-result')?.scrollIntoView({ behavior: 'smooth', block: 'center' }));
         } else if (isTerminalVideoStatus(statusResponse.status)) {
           window.clearInterval(videoPollRef.current);
           videoPollRef.current = null;
@@ -471,6 +478,11 @@ export const CampaignDetails = () => {
           <p className="page-subtitle">{campaign.product_name}</p>
         </div>
         <div className="page-header-actions">
+          <nav className="campaign-header-shortcuts" aria-label="Campaign tools">
+            <button type="button" onClick={() => setActiveCampaignSection('creative')}>AI Creative Studio</button>
+            <button type="button" onClick={() => setActiveCampaignSection('audience')}>Audience Analysis</button>
+            <button type="button" onClick={() => setActiveCampaignSection('performance')}>Performance Prediction</button>
+          </nav>
           <Link to={`/campaigns/${campaign.id}/edit`} className="btn-secondary">Edit campaign</Link>
           <button type="button" className="btn-danger-sm" onClick={() => setDeleteTarget(true)}>Delete</button>
         </div>
@@ -553,6 +565,7 @@ export const CampaignDetails = () => {
             isGeneratingImage={isGeneratingImage}
             generatedContent={creativeContent}
             errorMessage={creativeError}
+            errorRef={creativeErrorRef}
             onGenerate={handleGenerateCreative}
             onRegenerate={handleRegenerateCreative}
             onSave={handleSaveCreative}

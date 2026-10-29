@@ -5,11 +5,6 @@ export const Navbar = () => {
   const { user, isAuthenticated, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const campaignMatch = location.pathname.match(/^\/campaigns\/(\d+)$/);
-  const creativeStudioTarget = campaignMatch
-    ? `/campaigns/${campaignMatch[1]}#creative-studio`
-    : '/dashboard#campaigns';
-
   const handleLogout = async () => {
     await logout();
     navigate('/login');
@@ -29,11 +24,6 @@ export const Navbar = () => {
         <div className="navbar-actions">
           {isAuthenticated && user ? (
             <div className="user-profile-menu">
-              <nav className="navbar-links" aria-label="Primary">
-                <Link to="/dashboard" className={`nav-link ${location.pathname === '/dashboard' ? 'active' : ''}`}>Dashboard</Link>
-                <Link to="/dashboard#campaigns" className="nav-link">Campaigns</Link>
-                <Link to={creativeStudioTarget} className="nav-link">Creative Studio</Link>
-              </nav>
               <div className="user-info-chip">
                 <div className="user-avatar">
                   {user.name ? user.name.charAt(0).toUpperCase() : 'U'}

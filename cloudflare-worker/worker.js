@@ -1,4 +1,4 @@
-const IMAGE_MODEL = "@cf/black-forest-labs/flux-2-klein-4b";
+const IMAGE_MODEL = "@cf/black-forest-labs/flux-2-klein-9b";
 
 const ALLOWED_ASPECT_RATIOS = {
   "1:1": { width: 1024, height: 1024 },
@@ -31,6 +31,10 @@ function unauthorized() {
 export default {
   async fetch(request, env) {
     try {
+      // --------------------------------------------------
+      // 1. Request method
+      // --------------------------------------------------
+
       if (request.method !== "POST") {
         return jsonResponse(
           {
@@ -40,6 +44,10 @@ export default {
           405
         );
       }
+
+      // --------------------------------------------------
+      // 2. API key authentication
+      // --------------------------------------------------
 
       const authorization = request.headers.get("Authorization");
 
@@ -53,6 +61,10 @@ export default {
         return unauthorized();
       }
 
+      // --------------------------------------------------
+      // 3. Validate AI binding
+      // --------------------------------------------------
+
       if (!env.AI) {
         console.error("Workers AI binding 'AI' is not configured");
 
@@ -64,6 +76,10 @@ export default {
           500
         );
       }
+
+      // --------------------------------------------------
+      // 4. Parse request body
+      // --------------------------------------------------
 
       let body;
 
@@ -79,7 +95,8 @@ export default {
         );
       }
 
-      const prompt = typeof body?.prompt === "string" ? body.prompt.trim() : "";
+      const prompt =
+        typeof body?.prompt === "string" ? body.prompt.trim() : "";
 
       if (!prompt) {
         return jsonResponse(
@@ -101,7 +118,15 @@ export default {
         );
       }
 
-      const aspectRatio = typeof body?.aspect_ratio === "string" ? body.aspect_ratio : "1:1";
+      // --------------------------------------------------
+      // 5. Aspect ratio
+      // --------------------------------------------------
+
+      const aspectRatio =
+        typeof body?.aspect_ratio === "string"
+          ? body.aspect_ratio
+          : "1:1";
+
       const dimensions = ALLOWED_ASPECT_RATIOS[aspectRatio];
 
       if (!dimensions) {
@@ -109,11 +134,17 @@ export default {
           {
             success: false,
             error: "Unsupported aspect ratio",
-            allowed_aspect_ratios: Object.keys(ALLOWED_ASPECT_RATIOS),
+            allowed_aspect_ratios: Object.keys(
+              ALLOWED_ASPECT_RATIOS
+            ),
           },
           400
         );
       }
+
+      // --------------------------------------------------
+      // 6. Generate image
+      // --------------------------------------------------
 
       console.log(
         JSON.stringify({
@@ -126,13 +157,20 @@ export default {
       );
 
       const form = new FormData();
+
       form.append("prompt", prompt);
       form.append("width", String(dimensions.width));
       form.append("height", String(dimensions.height));
 
+      /*
+       * FLUX.2 Klein 4B uses multipart input through
+       * the Workers AI binding.
+       */
       const formResponse = new Response(form);
+
       const formStream = formResponse.body;
-      const formContentType = formResponse.headers.get("content-type");
+      const formContentType =
+        formResponse.headers.get("content-type");
 
       const result = await env.AI.run(IMAGE_MODEL, {
         multipart: {
@@ -140,6 +178,10 @@ export default {
           contentType: formContentType,
         },
       });
+
+      // --------------------------------------------------
+      // 7. Validate generated image
+      // --------------------------------------------------
 
       if (!result || !result.image) {
         console.error("Workers AI returned no image");
@@ -153,11 +195,15 @@ export default {
         );
       }
 
+      // --------------------------------------------------
+      // 8. Convert Base64 → binary image
+      // --------------------------------------------------
+
       let binaryString;
 
       try {
         binaryString = atob(result.image);
-      } catch {
+      } catch (error) {
         console.error("Failed to decode generated image");
 
         return jsonResponse(
@@ -171,8 +217,8 @@ export default {
 
       const imageBytes = new Uint8Array(binaryString.length);
 
-      for (let index = 0; index < binaryString.length; index += 1) {
-        imageBytes[index] = binaryString.charCodeAt(index);
+      for (let i = 0; i < binaryString.length; i++) {
+        imageBytes[i] = binaryString.charCodeAt(i);
       }
 
       console.log(
@@ -183,6 +229,10 @@ export default {
           height: dimensions.height,
         })
       );
+
+      // --------------------------------------------------
+      // 9. Return actual image
+      // --------------------------------------------------
 
       return new Response(imageBytes, {
         status: 200,
